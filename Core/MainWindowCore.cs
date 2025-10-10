@@ -62,7 +62,7 @@ public partial class MainWindow : Window
     public float originFreq = 44100f;
 
     // UI Draw
-    private readonly Timer visualEffectRefreshTimer = new(1);
+    private readonly Timer visualEffectRefreshTimer = new(16); // ~60 fps for better Wine/Linux compatibility
     private WriteableBitmap? WaveBitmap;
 
     // Error Handle
