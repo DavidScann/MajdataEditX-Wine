@@ -76,43 +76,38 @@ using Microsoft.Win32;
 
                     bpmChangeTimes.Add(Bass.BASS_ChannelBytes2Seconds(bgmStream, Bass.BASS_ChannelGetLength(bgmStream)));
 
-                    // Optimized: only calculate beats within visible range to prevent lag when scrolling far into the song
+                    // Optimized: calculate beats more efficiently to prevent lag
                     var visibleStart = currentTime - deltatime;
                     var visibleEnd = currentTime + deltatime;
 
-                    // Find the BPM section that contains or precedes the visible start time
-                    var startBpmIndex = 1; // Start from 1, not 0, to match original loop behavior
-                    for (var i = 1; i < bpmChangeTimes.Count; i++)
+                    // Find which BPM section contains or comes before the visible range
+                    var startBpmIndex = 0;
+                    for (var i = 0; i < bpmChangeTimes.Count - 1; i++)
                     {
-                        if (bpmChangeTimes[i] > visibleStart)
+                        if (bpmChangeTimes[i] <= visibleStart && visibleStart < bpmChangeTimes[i + 1])
                         {
                             startBpmIndex = i;
                             break;
                         }
                     }
 
-                    // Calculate the starting time and beat position
+                    // Calculate starting beat position
                     double time;
                     var signature = 4; //预留拍号
                     var currentBeat = 1;
                     var timePerBeat = 0d;
 
-                    // Calculate where we should start based on the BPM at visibleStart
-                    var bpmAtStart = bpmChangeValues[startBpmIndex - 1];
-                    timePerBeat = 1d / (bpmAtStart / 60d);
-
-                    // Find the beat position closest to (but before) visibleStart
-                    var referenceTime = bpmChangeTimes[startBpmIndex - 1];
-                    if (visibleStart > referenceTime)
+                    if (visibleStart > bpmChangeTimes[startBpmIndex] && bpmChangeValues.Count > startBpmIndex)
                     {
-                        var timeSinceLastBpmChange = visibleStart - referenceTime;
-                        var beatsSinceChange = (int)(timeSinceLastBpmChange / timePerBeat);
-                        time = referenceTime + beatsSinceChange * timePerBeat;
-                        currentBeat = (beatsSinceChange % signature) + 1;
+                        // Calculate how many beats have passed since the last BPM change
+                        timePerBeat = 1d / (bpmChangeValues[startBpmIndex] / 60d);
+                        var timeSinceLastBpm = visibleStart - bpmChangeTimes[startBpmIndex];
+                        var beatsSinceLastBpm = (int)(timeSinceLastBpm / timePerBeat);
+                        time = bpmChangeTimes[startBpmIndex] + beatsSinceLastBpm * timePerBeat;
+                        currentBeat = (beatsSinceLastBpm % signature) + 1;
                     }
                     else
                     {
-                        // Visible range starts before or at first BPM change
                         time = SimaiProcess.first;
                     }
 
@@ -120,14 +115,15 @@ using Microsoft.Win32;
                     var strongBeat = new List<double>();
                     var weakBeat = new List<double>();
 
-                    for (var i = startBpmIndex; i < bpmChangeTimes.Count; i++)
+                    // Start from the calculated BPM section
+                    for (var i = Math.Max(1, startBpmIndex + 1); i < bpmChangeTimes.Count; i++)
                     {
                         while (time - bpmChangeTimes[i] < -0.05) //在那个时间之前都是之前的bpm
                         {
                             if (currentBeat > signature) currentBeat = 1;
                             timePerBeat = 1d / (bpmChangeValues[i - 1] / 60d);
 
-                            // Only add beats within visible range
+                            // Only add beats within the visible range
                             if (time >= visibleStart && time <= visibleEnd)
                             {
                                 if (currentBeat == 1)
@@ -135,17 +131,15 @@ using Microsoft.Win32;
                                 else
                                     weakBeat.Add(time);
                             }
-                            else if (time > visibleEnd)
-                            {
-                                // Stop calculating if we've passed the visible range
-                                break;
-                            }
 
                             currentBeat++;
                             time += timePerBeat;
+
+                            // Early exit if past visible range
+                            if (time > visibleEnd)
+                                break;
                         }
 
-                        // Stop if we've passed the visible range
                         if (time > visibleEnd)
                             break;
 
