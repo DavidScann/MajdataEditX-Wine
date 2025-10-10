@@ -114,4 +114,5 @@ public class EditorSetting
     public string SendViewerKey = "Ctrl+Shift+z";
     public float touchSpeed = 7.5f;
     public bool SmoothSlideAnime = false;
+    public int VisualEffectRefreshRate = 16; //ms, ~60fps (default), increase for better Wine/Linux performance
 }
