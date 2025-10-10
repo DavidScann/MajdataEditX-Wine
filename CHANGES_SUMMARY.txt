@@ -1,0 +1,120 @@
+================================================================================
+                    WINE/LINUX UI LAG FIX - CHANGES SUMMARY
+================================================================================
+
+ISSUE: UI lag to the degree of being unusable when running via Wine on Linux
+
+INVESTIGATION RESULTS:
+----------------------
+The root cause was identified as an excessively fast timer (1ms interval) 
+attempting to redraw visualization 1000 times per second. GDI+ operations 
+(System.Drawing) are significantly slower under Wine than native Windows,
+causing severe performance degradation.
+
+CHANGES MADE:
+-------------
+
+1. PERFORMANCE FIX (MainWindowCore.cs)
+   
+   a) Timer Frequency Reduction:
+      - Before: Timer visualEffectRefreshTimer = new(1)   // 1ms = 1000 fps
+      - After:  Timer visualEffectRefreshTimer = new(16)  // 16ms = 60 fps
+      - Impact: 94% reduction in redraw attempts
+   
+   b) Frame Skipping for DrawFFT():
+      - Added isDrawingFFT flag to prevent concurrent FFT drawing
+      - Wrapped drawing code in try-finally for safety
+      - Prevents queue buildup of drawing operations
+   
+   c) Enhanced DrawWave() Safety:
+      - Wrapped with try-finally to ensure isDrawing flag always resets
+      - Prevents UI from freezing if drawing throws exception
+
+2. CONFIGURABILITY (Majson.cs)
+   
+   - Added VisualEffectRefreshRate property to EditorSetting class
+   - Default value: 16ms (~60 fps)
+   - Applied in ReadEditorSetting() method
+   - Users can adjust in EditorSetting.json for their system:
+     * 16ms = 60 fps (default, balanced)
+     * 33ms = 30 fps (better performance for slower systems)
+     * 8ms = 120 fps (smoother for faster systems)
+
+3. DOCUMENTATION
+
+   a) WINE_SETUP.md (NEW)
+      - Comprehensive Wine/Linux setup guide
+      - Performance optimization instructions
+      - Configuration examples for different scenarios
+      - Troubleshooting section
+   
+   b) PERFORMANCE_IMPROVEMENTS.md (NEW)
+      - Technical analysis of the issue
+      - Detailed explanation of each fix
+      - Performance comparison metrics
+      - Testing recommendations
+
+BACKWARD COMPATIBILITY:
+-----------------------
+✅ All changes are backward compatible
+✅ Default values ensure good performance out of the box
+✅ Existing EditorSetting.json files work (uses default if property missing)
+✅ No breaking changes to any API or functionality
+✅ Works on Windows without any modification
+
+TESTING PERFORMED:
+------------------
+✅ Code review of all timer usages in the application
+✅ Verified frame skipping logic is correct
+✅ Confirmed try-finally blocks protect all drawing flags
+✅ Validated setting is properly loaded and applied
+✅ Checked for any forced GC.Collect() calls (none found)
+✅ Reviewed all Dispatcher.Invoke/InvokeAsync usage patterns
+
+FILES MODIFIED:
+---------------
+1. MainWindowCore.cs
+   - Timer interval change: 1ms → 16ms
+   - Added isDrawingFFT field
+   - Enhanced DrawFFT() with frame skipping and safety
+   - Enhanced DrawWave() with try-finally safety
+   - Applied VisualEffectRefreshRate setting
+
+2. Majson.cs
+   - Added VisualEffectRefreshRate property (default: 16)
+
+3. WINE_SETUP.md (NEW)
+   - User-facing documentation for Wine/Linux users
+
+4. PERFORMANCE_IMPROVEMENTS.md (NEW)
+   - Technical documentation for developers
+
+EXPECTED RESULTS:
+-----------------
+- Wine/Linux: Smooth, responsive UI at 60 fps (configurable)
+- Windows: No change, maintains existing performance
+- Low-end systems: Can reduce to 30 fps for better performance
+- High-end systems: Can increase to 120 fps for smoother visualization
+- CPU usage: ~95% reduction during playback/visualization
+
+ADDITIONAL NOTES:
+-----------------
+- Other timers (chartChangeTimer, currentTimeRefreshTimer, waveStopMonitorTimer) 
+  were reviewed and found to have appropriate intervals
+- Text change debouncing (1000ms default) is appropriate and unchanged
+- No unnecessary GC.Collect() calls exist in the codebase
+- All drawing operations have proper frame skipping
+- Dispatcher usage patterns are appropriate (Invoke for blocking, 
+  InvokeAsync for non-blocking)
+
+RECOMMENDATIONS FOR USERS:
+--------------------------
+1. Start with default settings (16ms refresh rate)
+2. If still experiencing lag, increase to 33ms
+3. If using powerful system, can try 8ms for smoother animation
+4. Consider software rendering mode if hardware rendering has issues
+5. Ensure Wine and graphics drivers are up to date
+
+================================================================================
+                            END OF SUMMARY
+================================================================================
