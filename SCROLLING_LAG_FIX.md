@@ -158,3 +158,50 @@ foreach (var btime in strongBeat)
 4. Confirm scrolling performance is consistent throughout the song
 5. Test with BPM changes to ensure transitions are handled correctly
 6. Verify on both Windows and Wine/Linux environments
+
+## Bug Fix (Revision - commit f2f21ac)
+
+**Initial implementation issue**: The first version of the optimization had a bug in finding the starting BPM index, which caused the waveform to not render correctly.
+
+### The Bug
+The original optimization logic was:
+
+```csharp
+// BUGGY - would set wrong index when all BPM times <= visibleStart
+var startBpmIndex = 1;
+for (var i = 1; i < bpmChangeTimes.Count; i++)
+{
+    if (bpmChangeTimes[i] > visibleStart)
+    {
+        startBpmIndex = i;
+        break;
+    }
+}
+```
+
+**Problem**: If all `bpmChangeTimes[i] <= visibleStart`, the loop would complete without breaking, leaving `startBpmIndex = 1` which is incorrect. This caused:
+- Wrong BPM section to be used
+- Incorrect beat position calculations
+- Missing or incorrect waveform rendering
+
+### The Fix
+Corrected logic that properly finds the BPM section containing the visible range:
+
+```csharp
+// CORRECT - finds the section containing visibleStart
+var startBpmIndex = 0;
+for (var i = 0; i < bpmChangeTimes.Count - 1; i++)
+{
+    if (bpmChangeTimes[i] <= visibleStart && visibleStart < bpmChangeTimes[i + 1])
+    {
+        startBpmIndex = i;
+        break;
+    }
+}
+```
+
+This ensures:
+- Correctly identifies which BPM section contains `visibleStart`
+- Handles all edge cases (beginning of song, end of song, between sections)
+- Waveform renders properly at all positions
+- Performance improvement is maintained
