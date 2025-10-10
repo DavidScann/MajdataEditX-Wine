@@ -760,21 +760,22 @@ public partial class MainWindow : Window
                 var currentBeat = 1;
                 var timePerBeat = 0d;
                 
-                if (startBpmIndex > 1)
+                // Calculate where we should start based on the BPM at visibleStart
+                var bpmAtStart = bpmChangeValues[startBpmIndex - 1];
+                timePerBeat = 1d / (bpmAtStart / 60d);
+                
+                // Find the beat position closest to (but before) visibleStart
+                var referenceTime = bpmChangeTimes[startBpmIndex - 1];
+                if (visibleStart > referenceTime)
                 {
-                    // Calculate where we should start based on the BPM at visibleStart
-                    var bpmAtStart = bpmChangeValues[startBpmIndex - 1];
-                    timePerBeat = 1d / (bpmAtStart / 60d);
-                    
-                    // Find the last beat before visibleStart
-                    var timeSinceLastBpmChange = visibleStart - bpmChangeTimes[startBpmIndex - 1];
+                    var timeSinceLastBpmChange = visibleStart - referenceTime;
                     var beatsSinceChange = (int)(timeSinceLastBpmChange / timePerBeat);
-                    time = bpmChangeTimes[startBpmIndex - 1] + beatsSinceChange * timePerBeat;
+                    time = referenceTime + beatsSinceChange * timePerBeat;
                     currentBeat = (beatsSinceChange % signature) + 1;
                 }
                 else
                 {
-                    // For the beginning of the song, start from SimaiProcess.first
+                    // Visible range starts before or at first BPM change
                     time = SimaiProcess.first;
                 }
                 
