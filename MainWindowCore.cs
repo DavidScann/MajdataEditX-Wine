@@ -739,26 +739,72 @@ public partial class MainWindow : Window
 
                 bpmChangeTimes.Add(Bass.BASS_ChannelBytes2Seconds(bgmStream, Bass.BASS_ChannelGetLength(bgmStream)));
 
-                double time = SimaiProcess.first;
+                // Optimized: Calculate beats more efficiently to prevent lag
+                var visibleStart = currentTime - deltatime;
+                var visibleEnd = currentTime + deltatime;
+                
+                // Find which BPM section contains or comes before the visible range
+                var startBpmIndex = 0;
+                for (var i = 0; i < bpmChangeTimes.Count - 1; i++)
+                {
+                    if (bpmChangeTimes[i] <= visibleStart && visibleStart < bpmChangeTimes[i + 1])
+                    {
+                        startBpmIndex = i;
+                        break;
+                    }
+                }
+                
+                // Calculate starting beat position
+                double time;
                 var signature = 4; //预留拍号
                 var currentBeat = 1;
                 var timePerBeat = 0d;
+                
+                if (visibleStart > bpmChangeTimes[startBpmIndex] && bpmChangeValues.Count > startBpmIndex)
+                {
+                    // Calculate how many beats have passed since the last BPM change
+                    timePerBeat = 1d / (bpmChangeValues[startBpmIndex] / 60d);
+                    var timeSinceLastBpm = visibleStart - bpmChangeTimes[startBpmIndex];
+                    var beatsSinceLastBpm = (int)(timeSinceLastBpm / timePerBeat);
+                    time = bpmChangeTimes[startBpmIndex] + beatsSinceLastBpm * timePerBeat;
+                    currentBeat = (beatsSinceLastBpm % signature) + 1;
+                }
+                else
+                {
+                    time = SimaiProcess.first;
+                }
+                
                 pen = new Pen(Color.Yellow, 1);
                 var strongBeat = new List<double>();
                 var weakBeat = new List<double>();
-                for (var i = 1; i < bpmChangeTimes.Count; i++)
+                
+                // Start from the calculated BPM section
+                for (var i = Math.Max(1, startBpmIndex + 1); i < bpmChangeTimes.Count; i++)
                 {
                     while (time - bpmChangeTimes[i] < -0.05) //在那个时间之前都是之前的bpm
                     {
                         if (currentBeat > signature) currentBeat = 1;
                         timePerBeat = 1d / (bpmChangeValues[i - 1] / 60d);
-                        if (currentBeat == 1)
-                            strongBeat.Add(time);
-                        else
-                            weakBeat.Add(time);
+                        
+                        // Only add beats within the visible range
+                        if (time >= visibleStart && time <= visibleEnd)
+                        {
+                            if (currentBeat == 1)
+                                strongBeat.Add(time);
+                            else
+                                weakBeat.Add(time);
+                        }
+                        
                         currentBeat++;
                         time += timePerBeat;
+                        
+                        // Early exit if past visible range
+                        if (time > visibleEnd)
+                            break;
                     }
+                    
+                    if (time > visibleEnd)
+                        break;
 
                     time = bpmChangeTimes[i];
                     currentBeat = 1;
@@ -766,14 +812,12 @@ public partial class MainWindow : Window
 
                 foreach (var btime in strongBeat)
                 {
-                    if (btime - currentTime > deltatime) continue;
                     var x = ((float)(btime / step) - startindex) * linewidth;
                     graphics.DrawLine(pen, x, 0, x, 75);
                 }
 
                 foreach (var btime in weakBeat)
                 {
-                    if (btime - currentTime > deltatime) continue;
                     var x = ((float)(btime / step) - startindex) * linewidth;
                     graphics.DrawLine(pen, x, 0, x, 15);
                 }
@@ -783,7 +827,8 @@ public partial class MainWindow : Window
                 foreach (var note in SimaiProcess.timinglist)
                 {
                     if (note == null) break;
-                    if (note.time - currentTime > deltatime) continue;
+                    if (note.time - currentTime < -deltatime) continue; // Skip timing lines before visible range
+                    if (note.time - currentTime > deltatime) break; // Early exit when past visible range
                     var x = ((float)(note.time / step) - startindex) * linewidth;
                     graphics.DrawLine(pen, x, 60, x, 75);
                 }
@@ -792,7 +837,8 @@ public partial class MainWindow : Window
                 foreach (var note in SimaiProcess.notelist)
                 {
                     if (note == null) break;
-                    if (note.time - currentTime > deltatime) continue;
+                    if (note.time - currentTime < -deltatime) continue; // Skip notes before visible range
+                    if (note.time - currentTime > deltatime) break; // Early exit when past visible range
                     var notes = note.getNotes();
                     var isEach = notes.Count(o => !o.isSlideNoHead) > 1;
 
