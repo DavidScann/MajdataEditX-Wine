@@ -164,7 +164,8 @@ using Microsoft.Win32;
                     foreach (var note in SimaiProcess.timinglist)
                     {
                         if (note == null) break;
-                        if (note.time - currentTime > deltatime) continue;
+                        if (note.time - currentTime < -deltatime) continue; // Skip timing lines before visible range
+                        if (note.time - currentTime > deltatime) break; // Early exit when past visible range
                         var x = ((float)(note.time / step) - startindex) * linewidth;
                         graphics.DrawLine(pen, x, 60, x, 75);
                     }
@@ -173,7 +174,8 @@ using Microsoft.Win32;
                     foreach (var note in SimaiProcess.notelist)
                     {
                         if (note == null) break;
-                        if (note.time - currentTime > deltatime) continue;
+                        if (note.time - currentTime < -deltatime) continue; // Skip notes before visible range
+                        if (note.time - currentTime > deltatime) break; // Early exit when past visible range
                         var notes = note.getNotes();
                         var isEach = notes.Count(o => !o.isSlideNoHead) > 1;
 
