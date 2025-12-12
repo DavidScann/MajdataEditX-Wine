@@ -46,6 +46,17 @@ public partial class MainWindow : Window
 
         var handle = new WindowInteropHelper(this).Handle;
         Bass.BASS_Init(-1, 44100, BASSInit.BASS_DEVICE_CPSPEAKERS, handle);
+        
+        // Load BASS plugins for additional format support (Opus, etc.)
+        var pluginFiles = new[] { "bassopus.dll", "basswma.dll", "bassflac.dll" };
+        foreach (var plugin in pluginFiles)
+        {
+            if (File.Exists(plugin))
+            {
+                Bass.BASS_PluginLoad(plugin);
+            }
+        }
+        
         InitWave();
 
         ReadSoundEffect();
