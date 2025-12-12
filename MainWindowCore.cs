@@ -502,8 +502,14 @@ public partial class MainWindow : Window
         var path = maidataDir + "/" + majSettingFilename;
         if (!File.Exists(path)) return;
         var setting = JsonConvert.DeserializeObject<MajSetting>(File.ReadAllText(path));
-        LevelSelector.SelectedIndex = setting!.lastEditDiff;
-        selectedDifficulty = setting.lastEditDiff;
+        
+        // Validate difficulty index is within bounds
+        if (setting!.lastEditDiff >= 0 && setting.lastEditDiff < SimaiProcess.fumens.Length)
+        {
+            LevelSelector.SelectedIndex = setting.lastEditDiff;
+            selectedDifficulty = setting.lastEditDiff;
+        }
+        
         SetBgmPosition(setting.lastEditTime);
         Bass.BASS_ChannelSetAttribute(bgmStream, BASSAttribute.BASS_ATTRIB_VOL, setting.BGM_Level);
         Bass.BASS_ChannelSetAttribute(trackStartStream, BASSAttribute.BASS_ATTRIB_VOL, setting.BGM_Level);
