@@ -277,13 +277,22 @@ public partial class MainWindow : Window
 
         //soundSetting.Close();
         var decodeStream = Bass.BASS_StreamCreateFile(audioPath, 0L, 0L, BASSFlag.BASS_STREAM_DECODE | BASSFlag.BASS_STREAM_PRESCAN);
+        
+        if (decodeStream == 0)
+        {
+            var error = Bass.BASS_ErrorGetCode();
+            MessageBox.Show($"Failed to load audio file: {error}\nFile: {audioPath}\nPlease check if the audio file exists and is a valid format (MP3/OGG).", GetLocalizedString("Error"));
+            return;
+        }
+        
         bgmStream = BassFx.BASS_FX_TempoCreate(decodeStream, BASSFlag.BASS_FX_FREESOURCE);
         //Bass.BASS_StreamCreateFile(audioPath, 0L, 0L, BASSFlag.BASS_SAMPLE_FLOAT);
 
         if (bgmStream == 0)
         {
             var error = Bass.BASS_ErrorGetCode();
-            MessageBox.Show($"Failed to create audio stream: {error}\nPlease check if the audio file is valid.", GetLocalizedString("Error"));
+            Bass.BASS_StreamFree(decodeStream);
+            MessageBox.Show($"Failed to create tempo stream: {error}\nPlease check if the audio file is valid.", GetLocalizedString("Error"));
             return;
         }
 
