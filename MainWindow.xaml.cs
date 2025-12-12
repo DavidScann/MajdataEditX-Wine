@@ -53,7 +53,16 @@ public partial class MainWindow : Window
         {
             if (File.Exists(plugin))
             {
-                Bass.BASS_PluginLoad(plugin);
+                var pluginHandle = Bass.BASS_PluginLoad(plugin);
+                if (pluginHandle == 0)
+                {
+                    var error = Bass.BASS_ErrorGetCode();
+                    Console.WriteLine($"Failed to load plugin {plugin}: {error}");
+                }
+                else
+                {
+                    Console.WriteLine($"Successfully loaded plugin: {plugin}");
+                }
             }
         }
         

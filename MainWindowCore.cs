@@ -276,12 +276,21 @@ public partial class MainWindow : Window
         }
 
         //soundSetting.Close();
-        var decodeStream = Bass.BASS_StreamCreateFile(audioPath, 0L, 0L, BASSFlag.BASS_STREAM_DECODE | BASSFlag.BASS_STREAM_PRESCAN);
+        var decodeStream = Bass.BASS_StreamCreateFile(audioPath, 0L, 0L, BASSFlag.BASS_STREAM_DECODE | BASSFlag.BASS_STREAM_PRESCAN | BASSFlag.BASS_SAMPLE_AUTOFREE);
         
         if (decodeStream == 0)
         {
             var error = Bass.BASS_ErrorGetCode();
-            MessageBox.Show($"Failed to load audio file: {error}\nFile: {audioPath}\nPlease check if the audio file exists and is a valid format (MP3/OGG).", GetLocalizedString("Error"));
+            var errorMsg = $"Failed to load audio file: {error}\nFile: {audioPath}";
+            
+            if (error == BASSError.BASS_ERROR_FILEFORM)
+            {
+                errorMsg += "\n\nThe file format is not supported or the file is corrupted.";
+                errorMsg += "\nSupported formats: MP3, OGG Vorbis, OGG Opus (with bassopus.dll)";
+                errorMsg += "\n\nIf this is an Opus file with .ogg extension, try renaming it to .opus";
+            }
+            
+            MessageBox.Show(errorMsg, GetLocalizedString("Error"));
             return;
         }
         
