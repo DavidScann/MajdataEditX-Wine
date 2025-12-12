@@ -276,7 +276,7 @@ public partial class MainWindow : Window
         }
 
         //soundSetting.Close();
-        var decodeStream = Bass.BASS_StreamCreateFile(audioPath, 0L, 0L, BASSFlag.BASS_STREAM_DECODE | BASSFlag.BASS_STREAM_PRESCAN | BASSFlag.BASS_SAMPLE_AUTOFREE);
+        var decodeStream = Bass.BASS_StreamCreateFile(audioPath, 0L, 0L, BASSFlag.BASS_STREAM_DECODE | BASSFlag.BASS_STREAM_PRESCAN);
         
         if (decodeStream == 0)
         {
