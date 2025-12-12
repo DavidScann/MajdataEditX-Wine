@@ -280,6 +280,13 @@ public partial class MainWindow : Window
         bgmStream = BassFx.BASS_FX_TempoCreate(decodeStream, BASSFlag.BASS_FX_FREESOURCE);
         //Bass.BASS_StreamCreateFile(audioPath, 0L, 0L, BASSFlag.BASS_SAMPLE_FLOAT);
 
+        if (bgmStream == 0)
+        {
+            var error = Bass.BASS_ErrorGetCode();
+            MessageBox.Show($"Failed to create audio stream: {error}\nPlease check if the audio file is valid.", GetLocalizedString("Error"));
+            return;
+        }
+
         Bass.BASS_ChannelSetAttribute(bgmStream, BASSAttribute.BASS_ATTRIB_VOL, editorSetting!.Default_BGM_Level);
         Bass.BASS_ChannelSetAttribute(trackStartStream, BASSAttribute.BASS_ATTRIB_VOL, editorSetting!.Default_BGM_Level);
         Bass.BASS_ChannelSetAttribute(allperfectStream, BASSAttribute.BASS_ATTRIB_VOL, editorSetting!.Default_BGM_Level);
