@@ -62,7 +62,7 @@
         </ContentWithTargetPath>
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\MajSimaiX\MajSimai.csproj" />
+      <ProjectReference Include="MajSimaiX\MajSimai.csproj" />
     </ItemGroup>
     <ItemGroup>
       <Resource Include="Resources\bg_dummy.jpg" />
