@@ -12,7 +12,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 6.0.x
-      - run: dotnet restore MajdataEdit.csproj
+      - run: dotnet restore MajdataEdit.csproj -r win-x64
       - run: dotnet publish MajdataEdit.csproj -c Release -f net6.0-windows7.0 -r win-x64 --no-self-contained --no-restore
       - run: ls -R
       - uses: actions/upload-artifact@v4
