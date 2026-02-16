@@ -16,6 +16,7 @@ namespace MajdataEdit;
 public partial class MainWindow : Window
 {
     //// Common
+    public static MainWindow instance = null!;
     public static readonly string MAJDATA_VERSION_STRING = $"v{Assembly.GetExecutingAssembly().GetName().Version!.ToString(3)}";
     public static readonly SemVersion MAJDATA_VERSION = SemVersion.Parse(MAJDATA_VERSION_STRING, SemVersionStyles.Any);
 
@@ -64,6 +65,9 @@ public partial class MainWindow : Window
     // UI Draw
     private readonly Timer visualEffectRefreshTimer = new(16); // ~60 fps for better Wine/Linux compatibility
     private WriteableBitmap? WaveBitmap;
+    private bool isDrawing = false;
+    private double deltatime = 5;
+    private double ghostCusorPositionTime = 0;
 
     // Error Handle
     private static ErrorList errorListWindow = new();

@@ -100,11 +100,11 @@ public partial class MainWindow : Window
                     bpmChangeTimes.Clear();
                     bpmChangeValues.Clear();
                     foreach (var timing in SimaiProcess.timinglist)
-                        if (timing.currentBpm != lastbpm)
+                        if (timing.Bpm != lastbpm)
                         {
-                            bpmChangeTimes.Add(timing.time);
-                            bpmChangeValues.Add(timing.currentBpm);
-                            lastbpm = timing.currentBpm;
+                            bpmChangeTimes.Add(timing.Timing);
+                            bpmChangeValues.Add(timing.Bpm);
+                            lastbpm = timing.Bpm;
                         }
 
                     bpmChangeTimes.Add(Bass.BASS_ChannelBytes2Seconds(bgmStream, Bass.BASS_ChannelGetLength(bgmStream)));
@@ -197,9 +197,9 @@ public partial class MainWindow : Window
                     foreach (var note in SimaiProcess.timinglist)
                     {
                         if (note == null) break;
-                        if (note.time - currentTime < -deltatime) continue; // Skip timing lines before visible range
-                        if (note.time - currentTime > deltatime) break; // Early exit when past visible range
-                        var x = ((float)(note.time / step) - startindex) * linewidth;
+                        if (note.Timing - currentTime < -deltatime) continue; // Skip timing lines before visible range
+                        if (note.Timing - currentTime > deltatime) break; // Early exit when past visible range
+                        var x = ((float)(note.Timing / step) - startindex) * linewidth;
                         graphics.DrawLine(pen, x, 60, x, 75);
                     }
 
@@ -207,23 +207,23 @@ public partial class MainWindow : Window
                     foreach (var note in SimaiProcess.notelist)
                     {
                         if (note == null) break;
-                        if (note.time - currentTime < -deltatime) continue; // Skip notes before visible range
-                        if (note.time - currentTime > deltatime) break; // Early exit when past visible range
-                        var notes = note.getNotes();
-                        var isEach = notes.Count(o => !o.isSlideNoHead) > 1;
+                        if (note.Timing - currentTime < -deltatime) continue; // Skip notes before visible range
+                        if (note.Timing - currentTime > deltatime) break; // Early exit when past visible range
+                        var notes = note.Notes;
+                        var isEach = notes.Count(o => !o.IsSlideNoHead) > 1;
 
-                        var x = ((float)(note.time / step) - startindex) * linewidth;
+                        var x = ((float)(note.Timing / step) - startindex) * linewidth;
 
                         foreach (var noteD in notes)
                         {
-                            var y = noteD.startPosition * 6.875f + 8f; //与键位有关
+                            var y = noteD.StartPosition * 6.875f + 8f; //与键位有关
 
-                            if (noteD.isHanabi)
+                            if (noteD.IsHanabi)
                             {
                                 var xDeltaHanabi = (float)(1f / step) * linewidth; //Hanabi is 1s due to frame analyze
                                 var rectangleF = new RectangleF(x, 0, xDeltaHanabi, 75);
-                                if (noteD.noteType == SimaiNoteType.TouchHold)
-                                    rectangleF.X += (float)(noteD.holdTime / step) * linewidth;
+                                if (noteD.Type == SimaiNoteType.TouchHold)
+                                    rectangleF.X += (float)(noteD.HoldTime / step) * linewidth;
                                 var gradientBrush = new LinearGradientBrush(
                                     rectangleF,
                                     Color.FromArgb(100, 255, 0, 0),
@@ -233,12 +233,12 @@ public partial class MainWindow : Window
                                 graphics.FillRectangle(gradientBrush, rectangleF);
                             }
 
-                            if (noteD.noteType == SimaiNoteType.Tap)
+                            if (noteD.Type == SimaiNoteType.Tap)
                             {
-                                if (noteD.isForceStar)
+                                if (noteD.IsForceStar)
                                 {
                                     pen.Width = 3;
-                                    if (noteD.isBreak)
+                                    if (noteD.IsBreak)
                                         pen.Color = Color.OrangeRed;
                                     else if (isEach)
                                         pen.Color = Color.Gold;
@@ -251,7 +251,7 @@ public partial class MainWindow : Window
                                 else
                                 {
                                     pen.Width = 2;
-                                    if (noteD.isBreak)
+                                    if (noteD.IsBreak)
                                         pen.Color = Color.OrangeRed;
                                     else if (isEach)
                                         pen.Color = Color.Gold;
@@ -261,24 +261,24 @@ public partial class MainWindow : Window
                                 }
                             }
 
-                            if (noteD.noteType == SimaiNoteType.Touch)
+                            if (noteD.Type == SimaiNoteType.Touch)
                             {
                                 pen.Width = 2;
                                 pen.Color = isEach ? Color.Gold : Color.DeepSkyBlue;
                                 graphics.DrawRectangle(pen, x - 2.5f, y - 2.5f, 5, 5);
                             }
 
-                            if (noteD.noteType == SimaiNoteType.Hold)
+                            if (noteD.Type == SimaiNoteType.Hold)
                             {
                                 pen.Width = 3;
-                                if (noteD.isBreak)
+                                if (noteD.IsBreak)
                                     pen.Color = Color.OrangeRed;
                                 else if (isEach)
                                     pen.Color = Color.Gold;
                                 else
                                     pen.Color = Color.LightPink;
 
-                                var xRight = x + (float)(noteD.holdTime / step) * linewidth;
+                                var xRight = x + (float)(noteD.HoldTime / step) * linewidth;
 
                                 //1h[0:1]
                                 if (!float.IsNormal(xRight)) xRight = ushort.MaxValue;
@@ -287,10 +287,10 @@ public partial class MainWindow : Window
 
                             }
 
-                            if (noteD.noteType == SimaiNoteType.TouchHold)
+                            if (noteD.Type == SimaiNoteType.TouchHold)
                             {
                                 pen.Width = 3;
-                                var xDelta = (float)(noteD.holdTime / step) * linewidth / 4f;
+                                var xDelta = (float)(noteD.HoldTime / step) * linewidth / 4f;
                                 //Console.WriteLine("HoldPixel"+ xDelta);
                                 if (!float.IsNormal(xDelta)) xDelta = ushort.MaxValue;
                                 if (xDelta < 1f) xDelta = 1;
@@ -305,12 +305,12 @@ public partial class MainWindow : Window
                                 graphics.DrawLine(pen, x, y, x + xDelta, y);
                             }
 
-                            if (noteD.noteType == SimaiNoteType.Slide)
+                            if (noteD.Type == SimaiNoteType.Slide)
                             {
                                 pen.Width = 3;
-                                if (!noteD.isSlideNoHead)
+                                if (!noteD.IsSlideNoHead)
                                 {
-                                    if (noteD.isBreak)
+                                    if (noteD.IsBreak)
                                         pen.Color = Color.OrangeRed;
                                     else if (isEach)
                                         pen.Color = Color.Gold;
@@ -321,15 +321,15 @@ public partial class MainWindow : Window
                                         new PointF(x - 7f, y - 7f));
                                 }
 
-                                if (noteD.isSlideBreak)
+                                if (noteD.IsSlideBreak)
                                     pen.Color = Color.OrangeRed;
-                                else if (notes.Count(o => o.noteType == SimaiNoteType.Slide) >= 2)
+                                else if (notes.Count(o => o.Type == SimaiNoteType.Slide) >= 2)
                                     pen.Color = Color.Gold;
                                 else
                                     pen.Color = Color.SkyBlue;
                                 pen.DashStyle = DashStyle.Dot;
-                                var xSlide = (float)(noteD.slideStartTime / step - startindex) * linewidth;
-                                var xSlideRight = (float)(noteD.slideTime / step) * linewidth + xSlide;
+                                var xSlide = (float)(noteD.SlideStartTime / step - startindex) * linewidth;
+                                var xSlideRight = (float)(noteD.SlideTime / step) * linewidth + xSlide;
 
                                 if (!float.IsNormal(xSlideRight)) xSlideRight = ushort.MaxValue;
                                 if (!float.IsNormal(xSlide)) xSlide = ushort.MaxValue;

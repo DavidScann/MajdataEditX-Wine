@@ -28,6 +28,10 @@ internal static class SimaiProcess
     public static List<SimaiTimingPoint>[] OriginTimingLists = new List<SimaiTimingPoint>[7];
     public static List<SimaiTimingPoint>[] timingLists = new List<SimaiTimingPoint>[7];
 
+    // Convenience properties for accessing the currently selected difficulty
+    public static List<SimaiTimingPoint> timinglist => timingLists[MainWindow.selectedDifficulty] ?? new List<SimaiTimingPoint>();
+    public static List<SimaiTimingPoint> notelist => noteLists[MainWindow.selectedDifficulty] ?? new List<SimaiTimingPoint>();
+    public static float first => simaiFile.Offset;
 
     /// <summary>
     ///     Reset all the data in the static class.
