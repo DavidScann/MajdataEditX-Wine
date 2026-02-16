@@ -8,6 +8,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-dotnet@v3
         with:
+          submodules: recursive
+          fetch-depth: 0
           dotnet-version: 6.0.x
       - run: dotnet restore
       - run: dotnet publish -c Release -r win-x64 --no-self-contained
