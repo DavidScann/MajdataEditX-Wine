@@ -5,8 +5,11 @@ VisualStudioVersion = 18.2.11415.280 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MajdataEdit", "MajdataEdit.csproj", "{83EE1671-5045-4416-9D8B-054F389A511F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MajSimai", "..\MajSimaiX\MajSimai.csproj", "{7D2DDC93-913F-C1D5-0884-5CD5C9D170C0}"
-EndProject
+
+# Unsure what this MajSimaiX is for... In any case, it doesn't exist in the repo, so probably just some testing thing. 
+#Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MajSimai", "..\MajSimaiX\MajSimai.csproj", "{7D2DDC93-913F-C1D5-0884-5CD5C9D170C0}"
+#EndProject
+
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
