@@ -5,17 +5,17 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
-      - uses: actions/setup-dotnet@v3
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 6.0.x
-      - run: dotnet restore
-      - run: dotnet publish -c Release -r win-x64 --no-self-contained --framework net6.0-windows7.0
+      - run: dotnet restore MajdataEdit.csproj
+      - run: dotnet publish MajdataEdit.csproj -c Release -f net6.0-windows7.0 -r win-x64 --no-self-contained --no-restore
       - run: ls -R
       - uses: actions/upload-artifact@v4
         with:
           name: Build
-          path: bin\Release\net6.0-windows\win-x64\publish
+          path: bin\Release\net6.0-windows7.0\win-x64\publish
