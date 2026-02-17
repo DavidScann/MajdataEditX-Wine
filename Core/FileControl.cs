@@ -116,6 +116,7 @@ public partial class MainWindow : Window
         ReadSetting();
         SetRawFumenText(SimaiProcess.fumens[selectedDifficulty]);
         await SimaiProcess.Serialize(GetRawFumenText());
+        InvalidateBeatCache();
         SeekTextFromTime();
         OffsetTextBox.Text = SimaiProcess.simaiFile.Offset.ToString();
 
@@ -210,6 +211,7 @@ public partial class MainWindow : Window
             //if (!SimaiProcess.ReadData(dataPath)) return;
             SetRawFumenText(SimaiProcess.fumens[selectedDifficulty]);
             await SimaiProcess.Serialize(GetRawFumenText());
+            InvalidateBeatCache();
             SimaiProcess.simaiFile.Title = data.Name;
             SimaiProcess.simaiFile.Offset = data.Offset;
             selectedDifficulty = data.Diff;

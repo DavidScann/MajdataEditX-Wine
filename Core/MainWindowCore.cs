@@ -80,8 +80,18 @@ public partial class MainWindow : Window
     private Pen? _cachedFFTPen;
     private Font? _cachedStarFont;
     private readonly List<PointF> _reusablePointList = new(2048);
-    private readonly List<double> _reusableStrongBeatList = new(256);
-    private readonly List<double> _reusableWeakBeatList = new(1024);
+
+    // Cached beat positions (only recalculated when chart changes, NOT every frame)
+    private List<double> _cachedStrongBeats = new(256);
+    private List<double> _cachedWeakBeats = new(1024);
+    private bool _beatCacheDirty = true;
+    private int _beatCacheDifficulty = -1;
+    private int _fftFrameCounter = 0; // used to skip FFT frames during playback
+
+    // SE loop UI dispatch throttling (avoid flooding dispatcher queue)
+    private volatile float _pendingSeekTime = float.MinValue;
+    private volatile bool _seekDispatchPending = false;
+    private long _lastSeekDispatchTick = 0;
 
     // Error Handle
     private static ErrorList errorListWindow = new();

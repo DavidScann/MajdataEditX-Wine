@@ -66,7 +66,7 @@ public partial class MainWindow : Window
     public async void ShowSerializeError()
     {
         await SimaiProcess.Serialize(GetRawFumenText());
-
+        InvalidateBeatCache();
     }
     public async void SyntaxCheck()
     {

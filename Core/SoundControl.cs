@@ -86,7 +86,7 @@ public partial class MainWindow
                 //sw.Reset();
                 //sw.Start();
                 SoundEffectUpdate();
-                Thread.Sleep(1);
+                Thread.Sleep(2); // 2ms is sufficient for the 54.5ms trigger window
                 //sw.Stop();
                 //if(sw.Elapsed.TotalMilliseconds>1.5)
                 //    Console.WriteLine(sw.Elapsed);
@@ -136,14 +136,23 @@ public partial class MainWindow
 
                 if (se.hasClock) Bass.BASS_ChannelPlay(clockStream, true);
                 //
-                Dispatcher.InvokeAsync(() =>
+                // Throttle UI dispatches: store the latest time and dispatch at most every ~50ms
+                _pendingSeekTime = (float)nearestTime;
+                var now = Environment.TickCount64;
+                if (!_seekDispatchPending && now - _lastSeekDispatchTick > 50)
                 {
-                    if ((bool)FollowPlayCheck.IsChecked!)
+                    _seekDispatchPending = true;
+                    _lastSeekDispatchTick = now;
+                    Dispatcher.InvokeAsync(() =>
                     {
-                        CursorTime = (float)nearestTime;
-                        SeekTextFromTime();
-                    }
-                });
+                        _seekDispatchPending = false;
+                        if ((bool)FollowPlayCheck.IsChecked!)
+                        {
+                            CursorTime = _pendingSeekTime;
+                            SeekTextFromTime();
+                        }
+                    });
+                }
             }
         }
         catch
