@@ -136,7 +136,7 @@ public partial class MainWindow
 
                 if (se.hasClock) Bass.BASS_ChannelPlay(clockStream, true);
                 //
-                Dispatcher.Invoke(() =>
+                Dispatcher.InvokeAsync(() =>
                 {
                     if ((bool)FollowPlayCheck.IsChecked!)
                     {
@@ -468,15 +468,31 @@ public partial class MainWindow
             compPair.Value.InitializeRawSample();
         }
 
-        // 生成out.wav
+        //获取原来实时播放时候的音量
 
-        var trackOps = new List<SoundDataRange>();
-        var typeSamples = new Dictionary<SoundDataType, short[]>();
-        foreach (SoundDataType sType in Enum.GetValues(SoundDataType.None.GetType()))
-        {
-            if (sType == 0) continue;
-            typeSamples[sType] = new short[sampleCount];
-        }
+        float bgmVol = 1f,
+            answerVol = 1f,
+            judgeVol = 1f,
+            judgeExVol = 1f,
+            hanabiVol = 1f,
+            touchVol = 1f,
+            slideVol = 1f,
+            breakVol = 1f,
+            breakSlideVol = 1f;
+        Bass.BASS_ChannelGetAttribute(bgmStream, BASSAttribute.BASS_ATTRIB_VOL, ref bgmVol);
+        Bass.BASS_ChannelGetAttribute(answerStream, BASSAttribute.BASS_ATTRIB_VOL, ref answerVol);
+        Bass.BASS_ChannelGetAttribute(judgeStream, BASSAttribute.BASS_ATTRIB_VOL, ref judgeVol);
+        Bass.BASS_ChannelGetAttribute(breakStream, BASSAttribute.BASS_ATTRIB_VOL, ref breakVol);
+        Bass.BASS_ChannelGetAttribute(breakSlideStream, BASSAttribute.BASS_ATTRIB_VOL, ref breakSlideVol);
+        Bass.BASS_ChannelGetAttribute(slideStream, BASSAttribute.BASS_ATTRIB_VOL, ref slideVol);
+        Bass.BASS_ChannelGetAttribute(judgeExStream, BASSAttribute.BASS_ATTRIB_VOL, ref judgeExVol);
+        Bass.BASS_ChannelGetAttribute(touchStream, BASSAttribute.BASS_ATTRIB_VOL, ref touchVol);
+        Bass.BASS_ChannelGetAttribute(hanabiStream, BASSAttribute.BASS_ATTRIB_VOL, ref hanabiVol);
+
+        // 生成out.wav
+        var seMixTrack = new float[sampleCount];
+        var touchHoldTrack = new float[sampleCount];
+        var touchHoldOps = new List<(int From, int To)>();
 
         SoundBank? getSampleFromType(SoundDataType type)
         {
@@ -500,155 +516,86 @@ public partial class MainWindow
                 _ => null,
             };
         }
-        void sampleWrite(int time, SoundDataType type)
+        void sampleMix(float[] target, int time, SoundDataType type, float volume)
         {
             var sample = getSampleFromType(type);
             if (sample == null) return;
             if (sample.Raw == null) return;
             if (sample.Frequency <= 0) return;
 
-            for (var t = 0; t < sample.RawSize && time + t < typeSamples[type].Length; t++)
-                typeSamples[type][time + t] = sample.Raw[t];
+            var maxLen = (int)Math.Min(sample.RawSize, target.Length - time);
+            if (maxLen <= 0) return;
+            for (var t = 0; t < maxLen; t++)
+                target[time + t] += sample.Raw[t] * volume;
         }
-        void sampleWipe(int timeFrom, int timeTo, SoundDataType type)
+        void sampleWipe(float[] target, int timeFrom, int timeTo)
         {
-            for (var t = timeFrom; t < timeTo && t < typeSamples[type].Length; t++)
-                typeSamples[type][t] = 0;
+            if (timeFrom >= target.Length) return;
+            if (timeTo <= timeFrom) return;
+            var wipeFrom = Math.Max(0, timeFrom);
+            var wipeTo = Math.Min(timeTo, target.Length);
+            Array.Clear(target, wipeFrom, wipeTo - wipeFrom);
         }
 
         //生成每个音效的track
         foreach (var soundTiming in waitToBePlayed!)
         {
             var startIndex = (int)(soundTiming.time * freq) * 2; //乘2因为有两个channel
-            if (soundTiming.hasAnswer) sampleWrite(startIndex, SoundDataType.Answer);
-            if (soundTiming.hasJudge) sampleWrite(startIndex, SoundDataType.Judge);
-            if (soundTiming.hasJudgeBreak) sampleWrite(startIndex, SoundDataType.JudgeBreak);
-            if (soundTiming.hasJudgeEx) sampleWrite(startIndex, SoundDataType.JudgeEX);
-            if (soundTiming.hasBreak) sampleWrite(startIndex, SoundDataType.Break);
-            if (soundTiming.hasHanabi) sampleWrite(startIndex, SoundDataType.Hanabi);
+            if (soundTiming.hasAnswer) sampleMix(seMixTrack, startIndex, SoundDataType.Answer, answerVol);
+            if (soundTiming.hasJudge) sampleMix(seMixTrack, startIndex, SoundDataType.Judge, judgeVol);
+            if (soundTiming.hasJudgeBreak) sampleMix(seMixTrack, startIndex, SoundDataType.JudgeBreak, breakVol);
+            if (soundTiming.hasJudgeEx) sampleMix(seMixTrack, startIndex, SoundDataType.JudgeEX, judgeExVol);
+            if (soundTiming.hasBreak) sampleMix(seMixTrack, startIndex, SoundDataType.Break, breakVol * 0.75f);
+            if (soundTiming.hasHanabi) sampleMix(seMixTrack, startIndex, SoundDataType.Hanabi, hanabiVol);
             if (soundTiming.hasTouchHold)
             {
-                // no need to "CutNow" as HoldEnd did the work.
-                sampleWrite(startIndex, SoundDataType.TouchHold);
-                trackOps.Add(new SoundDataRange(SoundDataType.TouchHold, startIndex, holdRiserBank.RawSize));
+                sampleMix(touchHoldTrack, startIndex, SoundDataType.TouchHold, hanabiVol);
+                touchHoldOps.Add((startIndex, startIndex + (int)holdRiserBank.RawSize));
             }
 
             if (soundTiming.hasTouchHoldEnd)
             {
                 //不覆盖整个track，只覆盖可能有的部分
-                var lastTouchHoldOp = trackOps.FindLast(trackOp => trackOp.Type == SoundDataType.TouchHold);
-                sampleWipe(startIndex, (int)lastTouchHoldOp.To, SoundDataType.TouchHold);
+                var touchHoldOpIndex = touchHoldOps.FindLastIndex(trackOp => trackOp.From <= startIndex);
+                if (touchHoldOpIndex >= 0)
+                    sampleWipe(touchHoldTrack, startIndex, touchHoldOps[touchHoldOpIndex].To);
                 continue;
             }
 
-            if (soundTiming.hasSlide) sampleWrite(startIndex, SoundDataType.Slide);
-            if (soundTiming.hasTouch) sampleWrite(startIndex, SoundDataType.Touch);
-            if (soundTiming.hasBreakSlideStart) sampleWrite(startIndex, SoundDataType.BreakSlideStart);
-            if (soundTiming.hasBreakSlide) sampleWrite(startIndex, SoundDataType.BreakSlide);
-            if (soundTiming.hasJudgeBreakSlide) sampleWrite(startIndex, SoundDataType.JudgeBreakSlide);
+            if (soundTiming.hasSlide) sampleMix(seMixTrack, startIndex, SoundDataType.Slide, slideVol);
+            if (soundTiming.hasTouch) sampleMix(seMixTrack, startIndex, SoundDataType.Touch, touchVol);
+            if (soundTiming.hasBreakSlideStart) sampleMix(seMixTrack, startIndex, SoundDataType.BreakSlideStart, slideVol);
+            if (soundTiming.hasBreakSlide) sampleMix(seMixTrack, startIndex, SoundDataType.BreakSlide, breakSlideVol);
+            if (soundTiming.hasJudgeBreakSlide)
+                sampleMix(seMixTrack, startIndex, SoundDataType.JudgeBreakSlide, breakSlideVol);
             if (soundTiming.hasAllPerfect)
             {
-                sampleWrite(startIndex, SoundDataType.AllPerfect);
-                sampleWrite(startIndex, SoundDataType.FullComboFanfare);
+                sampleMix(seMixTrack, startIndex, SoundDataType.AllPerfect, bgmVol);
+                sampleMix(seMixTrack, startIndex, SoundDataType.FullComboFanfare, bgmVol);
             }
 
-            if (soundTiming.hasClock) sampleWrite(startIndex, SoundDataType.Clock);
+            if (soundTiming.hasClock) sampleMix(seMixTrack, startIndex, SoundDataType.Clock, bgmVol);
         }
-
-        //获取原来实时播放时候的音量
-
-        float bgmVol = 1f,
-            answerVol = 1f,
-            judgeVol = 1f,
-            judgeExVol = 1f,
-            hanabiVol = 1f,
-            touchVol = 1f,
-            slideVol = 1f,
-            breakVol = 1f,
-            breakSlideVol = 1f;
-        Bass.BASS_ChannelGetAttribute(bgmStream, BASSAttribute.BASS_ATTRIB_VOL, ref bgmVol);
-        Bass.BASS_ChannelGetAttribute(answerStream, BASSAttribute.BASS_ATTRIB_VOL, ref answerVol);
-        Bass.BASS_ChannelGetAttribute(judgeStream, BASSAttribute.BASS_ATTRIB_VOL, ref judgeVol);
-        Bass.BASS_ChannelGetAttribute(breakStream, BASSAttribute.BASS_ATTRIB_VOL, ref breakVol);
-        Bass.BASS_ChannelGetAttribute(breakSlideStream, BASSAttribute.BASS_ATTRIB_VOL, ref breakSlideVol);
-        Bass.BASS_ChannelGetAttribute(slideStream, BASSAttribute.BASS_ATTRIB_VOL, ref slideVol);
-        Bass.BASS_ChannelGetAttribute(judgeExStream, BASSAttribute.BASS_ATTRIB_VOL, ref judgeExVol);
-        Bass.BASS_ChannelGetAttribute(touchStream, BASSAttribute.BASS_ATTRIB_VOL, ref touchVol);
-        Bass.BASS_ChannelGetAttribute(hanabiStream, BASSAttribute.BASS_ATTRIB_VOL, ref hanabiVol);
-
-        var filedata = new List<byte>();
         var delayEmpty = new short[(int)(delaySeconds * freq * 2)];
-        var filehead = CreateWaveFileHeader(bgmBank.Raw!.Length * 2 + delayEmpty.Length * 2, 2, freq, 16).ToList();
+        var outPath = maidataDir + "/out.wav";
+        using var outStream = File.Create(outPath);
+        using var writer = new BinaryWriter(outStream);
+        writer.Write(CreateWaveFileHeader(bgmBank.Raw!.Length * 2 + delayEmpty.Length * 2, 2, freq, 16));
 
         for (var i = 0; i < delayEmpty.Length; i++)
         {
             if (i < trackStartBank.Raw!.Length)
                 delayEmpty[i] = trackStartBank.Raw[i];
-            filehead.AddRange(BitConverter.GetBytes(delayEmpty[i]));
+            writer.Write(delayEmpty[i]);
         }
 
         for (var i = 0; i < sampleCount; i++)
         {
-            // Apply BGM Data
-            var sampleValue = bgmBank.Raw[i] * bgmVol;
-
-            foreach (var sampleTuple in typeSamples)
-            {
-                var type = sampleTuple.Key;
-                var track = sampleTuple.Value;
-
-                switch (type)
-                {
-                    case SoundDataType.Answer:
-                        sampleValue += track[i] * answerVol;
-                        break;
-                    case SoundDataType.Judge:
-                        sampleValue += track[i] * judgeVol;
-                        break;
-                    case SoundDataType.JudgeBreak:
-                        sampleValue += track[i] * breakVol;
-                        break;
-                    case SoundDataType.JudgeEX:
-                        sampleValue += track[i] * judgeExVol;
-                        break;
-                    case SoundDataType.Break:
-                        sampleValue += track[i] * breakVol * 0.75f;
-                        break;
-                    case SoundDataType.BreakSlide:
-                    case SoundDataType.JudgeBreakSlide:
-                        sampleValue += track[i] * breakSlideVol;
-                        break;
-                    case SoundDataType.Hanabi:
-                    case SoundDataType.TouchHold:
-                        sampleValue += track[i] * hanabiVol;
-                        break;
-                    case SoundDataType.Slide:
-                    case SoundDataType.BreakSlideStart:
-                        sampleValue += track[i] * slideVol;
-                        break;
-                    case SoundDataType.Touch:
-                        sampleValue += track[i] * touchVol;
-                        break;
-                    case SoundDataType.AllPerfect:
-                    case SoundDataType.FullComboFanfare:
-                    case SoundDataType.Clock:
-                        sampleValue += track[i] * bgmVol;
-                        break;
-                }
-            }
-
-            var value = (long)sampleValue;
-            if (value > short.MaxValue)
-                value = short.MaxValue;
-            if (value < short.MinValue)
-                value = short.MinValue;
-            filedata.AddRange(BitConverter.GetBytes((short)value));
+            var sampleValue = bgmBank.Raw[i] * bgmVol + seMixTrack[i] + touchHoldTrack[i];
+            var value = Math.Clamp((long)sampleValue, short.MinValue, short.MaxValue);
+            writer.Write((short)value);
         }
 
-        filehead.AddRange(filedata);
-        File.WriteAllBytes(maidataDir + "/out.wav", filehead.ToArray());
-
-        typeSamples.Clear();
         bgmBank.Free();
         comparableBanks.Values.ToList().ForEach(otherBank =>
         {
@@ -887,30 +834,5 @@ public partial class MainWindow
         BreakSlideStart,
         BreakSlide,
         JudgeBreakSlide
-    }
-
-    private struct SoundDataRange
-    {
-        internal SoundDataRange(SoundDataType type, long from, long len)
-        {
-            Type = type;
-            From = from;
-            To = from + len;
-        }
-
-        public SoundDataType Type { get; }
-        public long From { get; }
-        public long To { get; private set; }
-
-        public long Length
-        {
-            get => To - From;
-            set => To = From + value;
-        }
-
-        public bool In(long value)
-        {
-            return value >= From && value < To;
-        }
     }
 }

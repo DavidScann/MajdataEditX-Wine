@@ -3,12 +3,15 @@ using DiscordRPC;
 using MajdataEdit.ChartShare;
 using Microsoft.AspNetCore.SignalR.Client;
 using Semver;
+using System.Drawing;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using WPFLocalizeExtension.Extensions;
+using Font = System.Drawing.Font;
+using Pen = System.Drawing.Pen;
 using Timer = System.Timers.Timer;
 
 namespace MajdataEdit;
@@ -16,7 +19,6 @@ namespace MajdataEdit;
 public partial class MainWindow : Window
 {
     //// Common
-    public static MainWindow instance = null!;
     public static readonly string MAJDATA_VERSION_STRING = $"v{Assembly.GetExecutingAssembly().GetName().Version!.ToString(3)}";
     public static readonly SemVersion MAJDATA_VERSION = SemVersion.Parse(MAJDATA_VERSION_STRING, SemVersionStyles.Any);
 
@@ -63,11 +65,23 @@ public partial class MainWindow : Window
     public float originFreq = 44100f;
 
     // UI Draw
-    private readonly Timer visualEffectRefreshTimer = new(16); // ~60 fps for better Wine/Linux compatibility
+    private readonly Timer visualEffectRefreshTimer = new(16); // ~60fps, was 1ms
     private WriteableBitmap? WaveBitmap;
-    private bool isDrawing = false;
-    private double deltatime = 5;
-    private double ghostCusorPositionTime = 0;
+    private WriteableBitmap? FFTBitmap; // cached FFT bitmap
+
+    // Cached GDI+ drawing objects (reused across frames to reduce GC pressure)
+    private Pen? _cachedWavePen;
+    private Pen? _cachedBeatPenStrong;
+    private Pen? _cachedBeatPenWeak;
+    private Pen? _cachedTimingPen;
+    private Pen? _cachedNotePen;
+    private Pen? _cachedPlayStartPen;
+    private Pen? _cachedGhostCursorPen;
+    private Pen? _cachedFFTPen;
+    private Font? _cachedStarFont;
+    private readonly List<PointF> _reusablePointList = new(2048);
+    private readonly List<double> _reusableStrongBeatList = new(256);
+    private readonly List<double> _reusableWeakBeatList = new(1024);
 
     // Error Handle
     private static ErrorList errorListWindow = new();

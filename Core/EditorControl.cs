@@ -153,7 +153,6 @@ public partial class MainWindow : Window
         ViewerTouchSpeed.Content = editorSetting.touchSpeed.ToString("F1");
 
         chartChangeTimer.Interval = editorSetting.ChartRefreshDelay; // 设置更新延迟
-        visualEffectRefreshTimer.Interval = editorSetting.VisualEffectRefreshRate; // 设置可视化效果刷新率
 
         SaveEditorSetting(); // 覆盖旧版本setting
     }

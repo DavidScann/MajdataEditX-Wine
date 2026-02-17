@@ -107,5 +107,4 @@ public class EditorSetting
     public bool SmoothSlideAnime = false;
     public string ShareUserName = "Guest";
     public string ShareColorHex = "#FFFFFF";
-    public int VisualEffectRefreshRate = 16; //ms, ~60fps (default), increase for better Wine/Linux performance
 }

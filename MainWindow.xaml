@@ -65,7 +65,8 @@
 
         <Image x:Name="MusicWave" Height="74" VerticalAlignment="Bottom" MouseWheel="MusicWave_MouseWheel"
                PreviewMouseLeftButtonDown="MusicWave_PreviewMouseLeftButtonDown" MouseMove="MusicWave_MouseMove"
-               Grid.ColumnSpan="3" SizeChanged="MusicWave_SizeChanged" Grid.RowSpan="2" Grid.Row="0" />
+               Grid.ColumnSpan="3" SizeChanged="MusicWave_SizeChanged" Grid.RowSpan="2" Grid.Row="0"
+               RenderOptions.BitmapScalingMode="LowQuality" />
         <Line StrokeThickness="3" Y2="56" Height="74" VerticalAlignment="Bottom" Stroke="Red" Y1="15"
               HorizontalAlignment="Center" Width="45" Grid.ColumnSpan="2" Grid.RowSpan="2" Grid.Row="0" Grid.Column="1" Margin="43,0,0,0" />
 
@@ -138,7 +139,8 @@
         </DockPanel>
 
         <Image x:Name="FFTImage" HorizontalAlignment="Right" Margin="0,0,14,91" Width="254" Height="255"
-               VerticalAlignment="Bottom" RenderTransformOrigin="0.5,0.5" Grid.Column="2" Grid.Row="1">
+               VerticalAlignment="Bottom" RenderTransformOrigin="0.5,0.5" Grid.Column="2" Grid.Row="1"
+               RenderOptions.BitmapScalingMode="LowQuality">
             <Image.RenderTransform>
                 <TransformGroup>
                     <ScaleTransform />
