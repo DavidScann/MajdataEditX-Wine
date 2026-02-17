@@ -179,9 +179,78 @@ public partial class MainWindow : Window
     private readonly PointF[] _fftPoints = new PointF[1024]; // pre-allocated FFT points array
     private readonly float[] _fftBuffer = new float[1024]; // pre-allocated FFT data buffer
 
+    private void InvalidateBeatCache()
+    {
+        _beatCacheDirty = true;
+    }
+
+    private void RebuildBeatCacheIfNeeded()
+    {
+        if (!_beatCacheDirty && _beatCacheDifficulty == selectedDifficulty) return;
+        _beatCacheDirty = false;
+        _beatCacheDifficulty = selectedDifficulty;
+        _cachedStrongBeats.Clear();
+        _cachedWeakBeats.Clear();
+
+        // Extract BPM change points
+        var bpmChanges = new List<(double Time, float Bpm, int Numerator, int Denominator)>();
+        float lastBpm = -1f;
+        int lastNum = -1;
+        int lastDen = -1;
+
+        foreach (var timing in SimaiProcess.timingLists[selectedDifficulty] ?? new())
+        {
+            if (timing == null) continue;
+            if (timing.Bpm != lastBpm || timing.SignatureNumerator != lastNum || timing.SignatureDenominator != lastDen)
+            {
+                bpmChanges.Add((timing.Timing, timing.Bpm, timing.SignatureNumerator, timing.SignatureDenominator));
+                lastBpm = timing.Bpm;
+                lastNum = timing.SignatureNumerator;
+                lastDen = timing.SignatureDenominator;
+            }
+        }
+
+        double audioEndTime = Bass.BASS_ChannelBytes2Seconds(bgmStream, Bass.BASS_ChannelGetLength(bgmStream));
+        bpmChanges.Add((audioEndTime, lastBpm, lastNum, lastDen));
+
+        double time = SimaiProcess.simaiFile.Offset;
+        int currentBeat = 1;
+
+        for (var i = 0; i < bpmChanges.Count - 1; i++)
+        {
+            var (Time, Bpm, Numerator, Denominator) = bpmChanges[i];
+            var nextSegTime = bpmChanges[i + 1].Time;
+
+            while (time < nextSegTime - 0.05)
+            {
+                if (currentBeat > Numerator) currentBeat = 1;
+                double timePerBeat = (60d / Bpm) * (4.0 / Denominator);
+
+                if (currentBeat == 1)
+                    _cachedStrongBeats.Add(time);
+                else
+                    _cachedWeakBeats.Add(time);
+
+                currentBeat++;
+                time += timePerBeat;
+            }
+
+            time = nextSegTime;
+            currentBeat = 1;
+        }
+    }
+
     private void draw_fft()
     {
         if (isDrawingFFT) return;
+
+        // During playback, only draw FFT every 4th frame (~7.5fps) to save CPU
+        if (isPlaying)
+        {
+            _fftFrameCounter++;
+            if (_fftFrameCounter % 4 != 0) return;
+        }
+
         Dispatcher.InvokeAsync(() =>
         {
             isDrawingFFT = true;
@@ -286,67 +355,20 @@ public partial class MainWindow : Window
             if (_reusablePointList.Count > 1)
                 graphics.DrawLines(_cachedWavePen, _reusablePointList.ToArray());
 
-            // 提取所有的节奏变更点（BPM 或 节拍记号 改变时）
-            var bpmChanges = new List<(double Time, float Bpm, int Numerator, int Denominator)>();
-            float lastBpm = -1f;
-            int lastNum = -1;
-            int lastDen = -1;
+            // Use cached beat positions (recalculated only when chart changes)
+            RebuildBeatCacheIfNeeded();
+            var strongBeat = _cachedStrongBeats;
+            var weakBeat = _cachedWeakBeats;
 
-            foreach (var timing in SimaiProcess.timingLists[selectedDifficulty] ?? new())
-            {
-                if (timing == null) continue;
-                if (timing.Bpm != lastBpm || timing.SignatureNumerator != lastNum || timing.SignatureDenominator != lastDen)
-                {
-                    bpmChanges.Add((timing.Timing, timing.Bpm, timing.SignatureNumerator, timing.SignatureDenominator));
-                    lastBpm = timing.Bpm;
-                    lastNum = timing.SignatureNumerator;
-                    lastDen = timing.SignatureDenominator;
-                }
-            }
+            var viewStart = currentTime - deltatime;
+            var viewEnd = currentTime + deltatime;
 
-            // 添加音频结尾作为计算终点
-            double audioEndTime = Bass.BASS_ChannelBytes2Seconds(bgmStream, Bass.BASS_ChannelGetLength(bgmStream));
-            bpmChanges.Add((audioEndTime, lastBpm, lastNum, lastDen));
-
-            double time = SimaiProcess.simaiFile.Offset;
-            int currentBeat = 1;
-            _reusableStrongBeatList.Clear();
-            _reusableWeakBeatList.Clear();
-            var strongBeat = _reusableStrongBeatList;
-            var weakBeat = _reusableWeakBeatList;
-
-            for (var i = 0; i < bpmChanges.Count - 1; i++)
-            {
-                var (Time, Bpm, Numerator, Denominator) = bpmChanges[i];
-                var nextSegTime = bpmChanges[i + 1].Time;
-
-                // 只要当前时间还没到下一个变更点，就按当前的节奏参数走
-                while (time < nextSegTime - 0.05)
-                {
-                    // 如果超过了当前小节的分子，重置为第一拍
-                    if (currentBeat > Numerator) currentBeat = 1;
-
-                    // 计算当前 BPM 下一拍的时长： (60/BPM) * (4/分母)
-                    double timePerBeat = (60d / Bpm) * (4.0 / Denominator);
-
-                    if (currentBeat == 1)
-                        strongBeat.Add(time);
-                    else
-                        weakBeat.Add(time);
-
-                    currentBeat++;
-                    time += timePerBeat;
-                }
-
-                time = nextSegTime;
-                currentBeat = 1;
-            }
-
-            // Draw strong beat
+            // Draw strong beat (use binary search to find start, break when past view)
             _cachedBeatPenStrong ??= new Pen(Color.Yellow, 1);
             foreach (var btime in strongBeat)
             {
-                if (btime - currentTime > deltatime) continue;
+                if (btime < viewStart) continue;
+                if (btime > viewEnd) break;
                 var x = ((float)(btime / step) - startindex) * linewidth;
                 graphics.DrawLine(_cachedBeatPenStrong, x, 0, x, 75);
             }
@@ -354,7 +376,8 @@ public partial class MainWindow : Window
             // Draw weak beat
             foreach (var btime in weakBeat)
             {
-                if (btime - currentTime > deltatime) continue;
+                if (btime < viewStart) continue;
+                if (btime > viewEnd) break;
                 var x = ((float)(btime / step) - startindex) * linewidth;
                 graphics.DrawLine(_cachedBeatPenStrong, x, 0, x, 15);
             }
@@ -364,16 +387,20 @@ public partial class MainWindow : Window
             foreach (var note in SimaiProcess.timingLists[selectedDifficulty] ?? new())
             {
                 if (note == null) break;
-                if (note.Timing - currentTime > deltatime) continue;
+                if (note.Timing < viewStart) continue; // skip past notes
+                if (note.Timing > viewEnd) break; // sorted list, stop early
                 var x = ((float)(note.Timing / step) - startindex) * linewidth;
                 graphics.DrawLine(_cachedTimingPen, x, 60, x, 75);
             }
 
-            //Draw notes                    
+            //Draw notes (with early skip and early exit for sorted list)
             foreach (var note in SimaiProcess.noteLists[selectedDifficulty] ?? new())
             {
                 if (note == null) break;
-                if (note.Timing - currentTime > deltatime) continue;
+                // Skip notes too far in the past (allow extra margin for holds/slides that extend)
+                if (note.Timing < viewStart - 30) continue;
+                // Stop iterating once past the visible window (list is sorted by time)
+                if (note.Timing > viewEnd) break;
                 var notes = note.Notes;
                 var isEach = notes.Count(o => !o.IsSlideNoHead && !o.IsMine) > 1;
 
@@ -713,6 +740,7 @@ public partial class MainWindow : Window
         {
             SyntaxCheck();
             await SimaiProcess.Serialize(GetRawFumenText());
+            InvalidateBeatCache();
             draw_wave();
             if (!ErrCount.Content.ToString()!.EndsWith("?"))
                 set_err_count(ErrCount.Content.ToString() + "?");
@@ -1096,6 +1124,7 @@ public partial class MainWindow : Window
         LevelTextBox.Text = SimaiProcess.levels[selectedDifficulty];
         SetSavedState(true);
         await SimaiProcess.Serialize(GetRawFumenText());
+        InvalidateBeatCache();
         draw_wave();
         SyntaxCheck();
 
@@ -1119,6 +1148,7 @@ public partial class MainWindow : Window
         {
             SimaiProcess.simaiFile.Offset = float.Parse(OffsetTextBox.Text);
             await SimaiProcess.Serialize(GetRawFumenText());
+            InvalidateBeatCache();
             draw_wave();
         }
         catch
@@ -1165,6 +1195,7 @@ public partial class MainWindow : Window
             return;
 
         await SimaiProcess.Serialize(GetRawFumenText());
+        InvalidateBeatCache();
 
         var timings = SimaiProcess.timingLists[selectedDifficulty] ?? new();
         double time = 0d;
