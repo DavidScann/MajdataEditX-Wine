@@ -522,9 +522,9 @@ public partial class MainWindow : Window
                             if (noteD.IsBreak)
                                 _cachedNotePen.Color = Color.OrangeRed;
                             else if (isEach)
-                                pen.Color = Color.Gold;
+                                _cachedNotePen.Color = Color.Gold;
                             else if (noteD.IsMine)
-                                pen.Color = Color.LightGray;
+                                _cachedNotePen.Color = Color.LightGray;
                             else
                                 _cachedNotePen.Color = Color.DeepSkyBlue;
                             using (Brush brush = new SolidBrush(_cachedNotePen.Color))
