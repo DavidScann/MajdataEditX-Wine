@@ -435,9 +435,9 @@ public partial class MainWindow : Window
                             if (noteD.IsBreak)
                                 _cachedNotePen.Color = Color.OrangeRed;
                             else if (isEach)
-                                _cachedNotePen.Color = Color.Gold;
+                                pen.Color = Color.Gold;
                             else if (noteD.IsMine)
-                                _cachedNotePen.Color = Color.LightGray;
+                                pen.Color = Color.LightGray;
                             else
                                 _cachedNotePen.Color = Color.DeepSkyBlue;
                             using (Brush brush = new SolidBrush(_cachedNotePen.Color))
@@ -450,9 +450,9 @@ public partial class MainWindow : Window
                             if (noteD.IsBreak)
                                 _cachedNotePen.Color = Color.OrangeRed;
                             else if (isEach)
-                                _cachedNotePen.Color = Color.Gold;
+                                pen.Color = Color.Gold;
                             else if (noteD.IsMine)
-                                _cachedNotePen.Color = Color.LightGray;
+                                pen.Color = Color.LightGray;
                             else
                                 _cachedNotePen.Color = Color.LightPink;
                             graphics.DrawEllipse(_cachedNotePen, x - 2.5f, y - 2.5f, 5, 5);
@@ -461,16 +461,16 @@ public partial class MainWindow : Window
 
                     if (noteD.Type == SimaiNoteType.Touch)
                     {
-                        _cachedNotePen.Width = 2;
+                        pen.Width = 2;
                         if (noteD.IsBreak)
-                            _cachedNotePen.Color = Color.OrangeRed;
+                            pen.Color = Color.OrangeRed;
                         else if (isEach)
-                            _cachedNotePen.Color = Color.Gold;
+                            pen.Color = Color.Gold;
                         else if (noteD.IsMine)
-                            _cachedNotePen.Color = Color.LightGray;
+                            pen.Color = Color.LightGray;
                         else
-                            _cachedNotePen.Color = Color.DeepSkyBlue;
-                        graphics.DrawRectangle(_cachedNotePen, x - 2.5f, y - 2.5f, 5, 5);
+                            pen.Color = Color.DeepSkyBlue;
+                        graphics.DrawRectangle(pen, x - 2.5f, y - 2.5f, 5, 5);
                     }
 
                     if (noteD.Type == SimaiNoteType.Hold)
@@ -479,9 +479,9 @@ public partial class MainWindow : Window
                         if (noteD.IsBreak)
                             _cachedNotePen.Color = Color.OrangeRed;
                         else if (isEach)
-                            _cachedNotePen.Color = Color.Gold;
+                            pen.Color = Color.Gold;
                         else if (noteD.IsMine)
-                            _cachedNotePen.Color = Color.LightGray;
+                            pen.Color = Color.LightGray;
                         else
                             _cachedNotePen.Color = Color.LightPink;
 
@@ -498,19 +498,20 @@ public partial class MainWindow : Window
                     {
                         _cachedNotePen.Width = 3;
                         var xDelta = (float)(noteD.HoldTime / step) * linewidth / 4f;
+                        //Console.WriteLine("HoldPixel"+ xDelta);
 
-                        _cachedNotePen.Color = Color.FromArgb(200, 255, 75, 0);
+                        pen.Color = Color.FromArgb(200, 255, 75, 0);
                         if (noteD.IsMine)
-                            _cachedNotePen.Color = Color.LightGray;
-                        graphics.DrawLine(_cachedNotePen, x, y, x + xDelta * 4f, y);
-                        _cachedNotePen.Color = Color.FromArgb(200, 255, 241, 0);
-                        graphics.DrawLine(_cachedNotePen, x, y, x + xDelta * 3f, y);
-                        _cachedNotePen.Color = Color.FromArgb(200, 2, 165, 89);
+                            pen.Color = Color.LightGray;
+                        graphics.DrawLine(pen, x, y, x + xDelta * 4f, y);
+                        pen.Color = Color.FromArgb(200, 255, 241, 0);
+                        graphics.DrawLine(pen, x, y, x + xDelta * 3f, y);
+                        pen.Color = Color.FromArgb(200, 2, 165, 89);
                         if (noteD.IsMine)
-                            _cachedNotePen.Color = Color.Gray;
-                        graphics.DrawLine(_cachedNotePen, x, y, x + xDelta * 2f, y);
-                        _cachedNotePen.Color = Color.FromArgb(200, 0, 140, 254);
-                        graphics.DrawLine(_cachedNotePen, x, y, x + xDelta, y);
+                            pen.Color = Color.Gray;
+                        graphics.DrawLine(pen, x, y, x + xDelta * 2f, y);
+                        pen.Color = Color.FromArgb(200, 0, 140, 254);
+                        graphics.DrawLine(pen, x, y, x + xDelta, y);
                     }
 
                     if (noteD.Type == SimaiNoteType.Slide)
@@ -521,9 +522,9 @@ public partial class MainWindow : Window
                             if (noteD.IsBreak)
                                 _cachedNotePen.Color = Color.OrangeRed;
                             else if (isEach)
-                                _cachedNotePen.Color = Color.Gold;
+                                pen.Color = Color.Gold;
                             else if (noteD.IsMine)
-                                _cachedNotePen.Color = Color.LightGray;
+                                pen.Color = Color.LightGray;
                             else
                                 _cachedNotePen.Color = Color.DeepSkyBlue;
                             using (Brush brush = new SolidBrush(_cachedNotePen.Color))
@@ -532,15 +533,15 @@ public partial class MainWindow : Window
                         }
 
                         if (noteD.IsSlideBreak)
-                            _cachedNotePen.Color = System.Drawing.Color.OrangeRed;
+                            pen.Color = System.Drawing.Color.OrangeRed;
                         else if (notes.Count(o => o.Type == SimaiNoteType.Slide && !o.IsMineSlide) >= 2)
-                            _cachedNotePen.Color = Color.Gold;
+                            pen.Color = Color.Gold;
                         else if (noteD.IsMine)
-                            _cachedNotePen.Color = Color.LightGray;
+                            pen.Color = Color.LightGray;
                         else
-                            _cachedNotePen.Color = Color.SkyBlue;
+                            pen.Color = Color.SkyBlue;
 
-                        _cachedNotePen.DashStyle = DashStyle.Dot;
+                        pen.DashStyle = DashStyle.Dot;
                         var xSlide = (float)(noteD.SlideStartTime / step - startindex) * linewidth;
                         var xSlideRight = (float)(noteD.SlideTime / step) * linewidth + xSlide;
 
@@ -1257,6 +1258,19 @@ public partial class MainWindow : Window
         chartChangeTimer.Start();
     }
 
+    private void FumenContent_MouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            var size = FumenContent.FontSize + e.Delta / 100;
+            if (size > 0)
+            {
+                editorSetting!.FontSize = (float)size;
+                FumenContent.FontSize = size;
+            }
+        }
+    }
+
     private void Find_icon_MouseDown(object? sender, MouseButtonEventArgs e)
     {
         FindAndScroll();
@@ -1343,5 +1357,20 @@ public partial class MainWindow : Window
     private void FatalErrorLabel_MouseDown(object sender, MouseButtonEventArgs e)
     {
         SetRawFumenPosition(fatalError!.Position.x, fatalError.Position.y-1);
+    }
+
+    private void PlayBackSpeedSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        playbackSpeed = PlayBackSpeedSelector.SelectedIndex switch
+        {
+            0 => 0.1f,
+            1 => 0.25f,
+            2 => 0.5f,
+            3 => 0.75f,
+            4 => 1f,
+            5 => 1.5f,
+            6 => 2f,
+            _ => 1f
+        };
     }
 }

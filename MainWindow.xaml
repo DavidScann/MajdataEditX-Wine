@@ -168,7 +168,7 @@
                 TextChanged="FumenContent_TextChanged"
                 SelectionChanged="FumenContent_SelectionChanged" 
                 PreviewKeyDown="FumenContent_OnPreviewKeyDown" 
-                Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2">
+                Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" MouseWheel="FumenContent_MouseWheel">
             <TextBox.Background>
                 <SolidColorBrush Color="#FF050505" Opacity="0.3" />
             </TextBox.Background>
@@ -253,7 +253,7 @@
         <ComboBox x:Name="PlayBackSpeedSelector" Margin="7,241,0,0" 
                   HorizontalAlignment="Left" Width="87" Height="21" VerticalAlignment="Top" SelectedIndex="4"
                   Background="{DynamicResource ButtonsBackground}" Foreground="{DynamicResource ButtonForeground}"
-                  Template="{DynamicResource DarkComboBox}" Grid.Row="1" Grid.Column="1">
+                  Template="{DynamicResource DarkComboBox}" Grid.Row="1" Grid.Column="1" SelectionChanged="PlayBackSpeedSelector_SelectionChanged">
             <ComboBoxItem Content="0.10x" />
             <ComboBoxItem Content="0.25x" />
             <ComboBoxItem Content="0.50x" />

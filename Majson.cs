@@ -20,6 +20,7 @@ internal class EditRequestjson
     public EditorComboIndicator comboStatusType;
     public EditorPlayMethod editorPlayMethod;
     public EditorControlMethod control;
+    public JudgeDisplayMode judgeDisplayMode;
     public string? jsonPath;
     public float noteSpeed;
     public long startAt;
@@ -30,7 +31,18 @@ internal class EditRequestjson
 
 public enum EditorPlayMethod
 {
-    Classic,DJAuto,Random,Disabled
+    Classic,
+    DJAuto,
+    Random,
+    Disabled
+}
+
+public enum JudgeDisplayMode
+{
+    None,
+    FastLate,
+    Level,
+    Both
 }
 
 public enum EditorComboIndicator
@@ -74,10 +86,10 @@ internal class MajSetting
 public class EditorSetting
 {
     public bool AutoCheckUpdate = true;
-    public float backgroundCover = 0.6f;
+    public float BackgroundCover = 0.6f;
     public int ChartRefreshDelay = 1000;
-    public EditorComboIndicator comboStatusType = 0;
-    public EditorPlayMethod editorPlayMethod;
+    public EditorComboIndicator ComboStatusType = 0;
+    public EditorPlayMethod EditorPlayMethod;
     public string DecreasePlaybackSpeedKey = "Ctrl+o";
     public float Default_Answer_Level = 0.7f;
     public float Default_BGM_Level = 0.7f;
@@ -89,7 +101,7 @@ public class EditorSetting
     public float Default_Slide_Level = 0.7f;
     public float Default_Touch_Level = 0.7f;
     public float DefaultSlideAccuracy = 0.2f;
-    public float FontSize = 12;
+    public float FontSize = 14;
     public string IncreasePlaybackSpeedKey = "Ctrl+p";
     public string Language = "en-US";
     public string Mirror180Key = "Ctrl+l";
@@ -98,12 +110,13 @@ public class EditorSetting
     public string MirrorLeftRightKey = "Ctrl+j";
     public string MirrorUpDownKey = "Ctrl+k";
     public string PlayPauseKey = "Ctrl+Shift+c";
-    public float playSpeed = 7.5f;
+    public float PlaySpeed = 7.5f;
     public string PlayStopKey = "Ctrl+Shift+x";
+    public JudgeDisplayMode judgeDisplayMode = JudgeDisplayMode.Both;
     public int RenderMode = 0; //0=硬件渲染(默认)，1=软件渲染
     public string SaveKey = "Ctrl+s";
     public string SendViewerKey = "Ctrl+Shift+z";
-    public float touchSpeed = 7.5f;
+    public float TouchSpeed = 7.5f;
     public bool SmoothSlideAnime = false;
     public string ShareUserName = "Guest";
     public string ShareColorHex = "#FFFFFF";

@@ -251,6 +251,18 @@ CP区间±{5:0.0} ms，相关判定区如下:
   <data name="FatalError" xml:space="preserve">
     <value>出现严重错误！{0} (L{1} C{2}) 请先解决该问题再继续编写！</value>
   </data>
+  <data name="SubDivide1p5" xml:space="preserve">
+    <value>将乐句细化到1.5倍</value>
+  </data>
+  <data name="SubDivide2" xml:space="preserve">
+    <value>将乐句细化到2倍</value>
+  </data>
+  <data name="EditorFontSize" xml:space="preserve">
+    <value>字体大小</value>
+  </data>
+  <data name="JudgeDisplay" xml:space="preserve">
+    <value>判定显示</value>
+  </data>
   <data name="AskCloseView" xml:space="preserve">
     <value>要关闭View吗？</value>
   </data>
@@ -570,7 +582,8 @@ CP区间±{5:0.0} ms，相关判定区如下:
     <value>平滑Slide动画</value>
   </data>
   <data name="SmoothSlideAnimeTooltip" xml:space="preserve">
-    <value>启用后，Slide轨迹会随着星星消失，而不是以判定区为单位消失</value>
+    <value>启用后，Slide轨迹会随着星星消失，而不是以判定区为单位消失
+(仅在默认模拟方式起效)</value>
   </data>
   <data name="PlayMethod" xml:space="preserve">
     <value>模拟方式</value>
@@ -608,10 +621,16 @@ CP区间±{5:0.0} ms，相关判定区如下:
   <data name="UserLeft" xml:space="preserve">
     <value>{0} 离开了谱面共享 {1}</value>
   </data>
-  <data name="SubDivide1p5" xml:space="preserve">
-    <value>将乐句细化到1.5倍</value>
+  <data name="JudgeDisplayNone" xml:space="preserve">
+    <value>不显示</value>
   </data>
-  <data name="SubDivide2" xml:space="preserve">
-    <value>将乐句细化到2倍</value>
+  <data name="JudgeDisplayFastLate" xml:space="preserve">
+    <value>只显示Fast / Late</value>
+  </data>
+  <data name="JudgeDisplayLevel" xml:space="preserve">
+    <value>只显示判定等级</value>
+  </data>
+  <data name="JudgeDisplayBoth" xml:space="preserve">
+    <value>都显示</value>
   </data>
 </root>

@@ -54,6 +54,7 @@ public partial class MainWindow : Window
     // Playing
     private float CursorTime;
     private EditorControlMethod lastEditorState;
+    private float playbackSpeed = 1f;
 
     // Wave
     private double lastMousePointX; //Used for drag scroll

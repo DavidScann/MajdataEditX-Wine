@@ -131,7 +131,7 @@ public static class Mirror
             {
                 isPartIgnored = true;
             }
-
+            
             if (hsStatus == 0)
             {
                 if (HS_SEQUENCE[0] == c)

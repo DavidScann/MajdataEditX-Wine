@@ -251,6 +251,18 @@ Critical Perfect: ±{5:0.0} ms，Sensors:
   <data name="FatalError" xml:space="preserve">
     <value>Fatal Error Occured！{0} (L{1} C{2}) please solve it first!</value>
   </data>
+  <data name="SubDivide1p5" xml:space="preserve">
+    <value>Subdivide by 1.5 times</value>
+  </data>
+  <data name="SubDivide2" xml:space="preserve">
+    <value>Subdivide by 2 times</value>
+  </data>
+  <data name="EditorFontSize" xml:space="preserve">
+    <value>Font Size</value>
+  </data>
+  <data name="JudgeDisplay" xml:space="preserve">
+    <value>Judge Display</value>
+  </data>
   <data name="AskCloseView" xml:space="preserve">
     <value>Viewを閉しますか？</value>
   </data>
@@ -604,7 +616,8 @@ Open Browser to download latest update of Majdata?</value>
     <comment>Translation required</comment>
   </data>
   <data name="SmoothSlideAnimeTooltip" xml:space="preserve">
-    <value>When enabled, the Slide Track will disappear with the star instead of one judgment area after another.</value>
+    <value>When enabled, the Slide Track will disappear with the star instead of one judgment area after another.
+(Default Auto Method Only)</value>
     <comment>Translation required</comment>
   </data>
   <data name="PlayMethod" xml:space="preserve">
@@ -643,10 +656,16 @@ Open Browser to download latest update of Majdata?</value>
   <data name="UserLeft" xml:space="preserve">
     <value>{0} Left Chart Share {1}</value>
   </data>
-  <data name="SubDivide1p5" xml:space="preserve">
-    <value>Subdivide by 1.5 times</value>
+  <data name="JudgeDisplayNone" xml:space="preserve">
+    <value>None</value>
   </data>
-  <data name="SubDivide2" xml:space="preserve">
-    <value>Subdivide by 2 times</value>
+  <data name="JudgeDisplayFastLate" xml:space="preserve">
+    <value>Fast/Late Only</value>
+  </data>
+  <data name="JudgeDisplayLevel" xml:space="preserve">
+    <value>Level Only</value>
+  </data>
+  <data name="JudgeDisplayBoth" xml:space="preserve">
+    <value>Both</value>
   </data>
 </root>

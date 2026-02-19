@@ -148,9 +148,9 @@ public partial class MainWindow : Window
         AddGesture(editorSetting.MirrorCcw45Key, "MirrorCcw45");
         FumenContent.FontSize = editorSetting.FontSize;
 
-        ViewerCover.Content = editorSetting.backgroundCover.ToString();
-        ViewerSpeed.Content = editorSetting.playSpeed.ToString("F1"); // 转化为形如"7.0", "9.5"这样的速度
-        ViewerTouchSpeed.Content = editorSetting.touchSpeed.ToString("F1");
+        ViewerCover.Content = editorSetting.BackgroundCover.ToString();
+        ViewerSpeed.Content = editorSetting.PlaySpeed.ToString("F1"); // 转化为形如"7.0", "9.5"这样的速度
+        ViewerTouchSpeed.Content = editorSetting.TouchSpeed.ToString("F1");
 
         chartChangeTimer.Interval = editorSetting.ChartRefreshDelay; // 设置更新延迟
 

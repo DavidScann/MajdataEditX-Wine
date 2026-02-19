@@ -47,19 +47,19 @@ public partial class EditorSettingPanel : Window
 
         RenderModeComboBox.SelectedIndex = window.editorSetting.RenderMode;
 
-        ViewerCover.Text = window.editorSetting.backgroundCover.ToString();
-        ViewerSpeed.Text = window.editorSetting.playSpeed.ToString("F1"); // 转化为形如"7.0", "9.5"这样的速度
-        ViewerTouchSpeed.Text = window.editorSetting.touchSpeed.ToString("F1");
+        ViewerCover.Text = window.editorSetting.BackgroundCover.ToString();
+        ViewerSpeed.Text = window.editorSetting.PlaySpeed.ToString("F1"); // 转化为形如"7.0", "9.5"这样的速度
+        ViewerTouchSpeed.Text = window.editorSetting.TouchSpeed.ToString("F1");
         ComboDisplay.SelectedIndex = Array.IndexOf(
-            Enum.GetValues(window.editorSetting.comboStatusType.GetType()),
-            window.editorSetting.comboStatusType
+            Enum.GetValues(window.editorSetting.ComboStatusType.GetType()),
+            window.editorSetting.ComboStatusType
         );
         if (ComboDisplay.SelectedIndex < 0)
             ComboDisplay.SelectedIndex = 0;
 
         PlayMethod.SelectedIndex = Array.IndexOf(
-            Enum.GetValues(window.editorSetting.editorPlayMethod.GetType()),
-            window.editorSetting.editorPlayMethod
+            Enum.GetValues(window.editorSetting.EditorPlayMethod.GetType()),
+            window.editorSetting.EditorPlayMethod
         );
         if(PlayMethod.SelectedIndex < 0) 
             PlayMethod.SelectedIndex = 0;
@@ -67,9 +67,12 @@ public partial class EditorSettingPanel : Window
         ChartRefreshDelay.Text = window.editorSetting.ChartRefreshDelay.ToString();
         AutoUpdate.IsChecked = window.editorSetting.AutoCheckUpdate;
         SmoothSlideAnime.IsChecked = window.editorSetting.SmoothSlideAnime;
+        EditorFontSize.Text = window.editorSetting.FontSize.ToString();
 
         ShareUserName.Text = window.editorSetting.ShareUserName;
         ShareColorHex.Text = window.editorSetting.ShareColorHex;
+
+        cbJudgeDisplayMode.SelectedIndex = (int)window.editorSetting.judgeDisplayMode;
     }
 
     private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -110,26 +113,29 @@ public partial class EditorSettingPanel : Window
         var window = (MainWindow)Owner;
         window.editorSetting!.Language = langList[LanguageComboBox.SelectedIndex];
         window.editorSetting!.RenderMode = RenderModeComboBox.SelectedIndex;
-        window.editorSetting!.backgroundCover = float.Parse(ViewerCover.Text);
-        window.editorSetting!.playSpeed = float.Parse(ViewerSpeed.Text);
-        window.editorSetting!.touchSpeed = float.Parse(ViewerTouchSpeed.Text);
+        window.editorSetting!.BackgroundCover = float.Parse(ViewerCover.Text);
+        window.editorSetting!.PlaySpeed = float.Parse(ViewerSpeed.Text);
+        window.editorSetting!.TouchSpeed = float.Parse(ViewerTouchSpeed.Text);
         window.editorSetting!.ChartRefreshDelay = int.Parse(ChartRefreshDelay.Text);
         window.editorSetting!.AutoCheckUpdate = (bool) AutoUpdate.IsChecked!;
+        window.editorSetting!.FontSize = float.Parse(EditorFontSize.Text);
         window.editorSetting!.SmoothSlideAnime = (bool) SmoothSlideAnime.IsChecked!;
-        window.editorSetting!.editorPlayMethod = (EditorPlayMethod)PlayMethod.SelectedIndex;
+        window.editorSetting!.EditorPlayMethod = (EditorPlayMethod)PlayMethod.SelectedIndex;
         // window.editorSetting.isComboEnabled = (bool) ComboDisplay.IsChecked!;
-        window.editorSetting!.comboStatusType = (EditorComboIndicator)Enum.GetValues(
-            window.editorSetting!.comboStatusType.GetType()
+        window.editorSetting!.ComboStatusType = (EditorComboIndicator)Enum.GetValues(
+            window.editorSetting!.ComboStatusType.GetType()
         ).GetValue(ComboDisplay.SelectedIndex)!;
         window.editorSetting.ShareUserName = ShareUserName.Text;
         window.editorSetting.ShareColorHex = ShareColorHex.Text;
+        window.editorSetting.judgeDisplayMode = (JudgeDisplayMode)cbJudgeDisplayMode.SelectedIndex;
 
         window.SaveEditorSetting();
 
-        window.ViewerCover.Content = window.editorSetting.backgroundCover.ToString();
-        window.ViewerSpeed.Content = window.editorSetting.playSpeed.ToString("F1"); // 转化为形如"7.0", "9.5"这样的速度
-        window.ViewerTouchSpeed.Content = window.editorSetting.touchSpeed.ToString("F1");
+        window.ViewerCover.Content = window.editorSetting.BackgroundCover.ToString();
+        window.ViewerSpeed.Content = window.editorSetting.PlaySpeed.ToString("F1"); // 转化为形如"7.0", "9.5"这样的速度
+        window.ViewerTouchSpeed.Content = window.editorSetting.TouchSpeed.ToString("F1");
         window.chartChangeTimer.Interval = window.editorSetting.ChartRefreshDelay;
+        window.FumenContent.FontSize = window.editorSetting.FontSize;
 
 
         saveFlag = true;

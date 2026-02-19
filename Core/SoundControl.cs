@@ -478,7 +478,6 @@ public partial class MainWindow
         }
 
         //获取原来实时播放时候的音量
-
         float bgmVol = 1f,
             answerVol = 1f,
             judgeVol = 1f,
@@ -550,6 +549,9 @@ public partial class MainWindow
         foreach (var soundTiming in waitToBePlayed!)
         {
             var startIndex = (int)(soundTiming.time * freq) * 2; //乘2因为有两个channel
+
+            startIndex = (int)(startIndex / GetPlaybackSpeed());
+
             if (soundTiming.hasAnswer) sampleMix(seMixTrack, startIndex, SoundDataType.Answer, answerVol);
             if (soundTiming.hasJudge) sampleMix(seMixTrack, startIndex, SoundDataType.Judge, judgeVol);
             if (soundTiming.hasJudgeBreak) sampleMix(seMixTrack, startIndex, SoundDataType.JudgeBreak, breakVol);
