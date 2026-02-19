@@ -23,37 +23,37 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        // Auto-detect Wine and enable software rendering for compatibility
-        if (IsRunningUnderWine())
-        {
-            RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
+        // // Auto-detect Wine and enable software rendering for compatibility
+        // if (IsRunningUnderWine())
+        // {
+        //     RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
 
-            // Reduce WPF animation framerate to ease CPU load under Wine
-            Timeline.DesiredFrameRateProperty.OverrideMetadata(
-                typeof(Timeline),
-                new FrameworkPropertyMetadata(30));
-        }
+        //     // Reduce WPF animation framerate to ease CPU load under Wine
+        //     Timeline.DesiredFrameRateProperty.OverrideMetadata(
+        //         typeof(Timeline),
+        //         new FrameworkPropertyMetadata(30));
+        // }
     }
 
     /// <summary>
     /// Detects whether the application is running under Wine/Proton.
     /// </summary>
-    private static bool IsRunningUnderWine()
-    {
-        try
-        {
-            // Method 1: Check for ntdll.dll wine_get_version export
-            var ntdll = GetModuleHandle("ntdll.dll");
-            if (ntdll != IntPtr.Zero && GetProcAddress(ntdll, "wine_get_version") != IntPtr.Zero)
-                return true;
+    // private static bool IsRunningUnderWine()
+    // {
+    //     try
+    //     {
+    //         // Method 1: Check for ntdll.dll wine_get_version export
+    //         var ntdll = GetModuleHandle("ntdll.dll");
+    //         if (ntdll != IntPtr.Zero && GetProcAddress(ntdll, "wine_get_version") != IntPtr.Zero)
+    //             return true;
 
-            // Method 2: Check Wine registry key
-            using var key = Registry.CurrentUser.OpenSubKey(@"Software\Wine");
-            if (key != null) return true;
-        }
-        catch { }
-        return false;
-    }
+    //         // Method 2: Check Wine registry key
+    //         using var key = Registry.CurrentUser.OpenSubKey(@"Software\Wine");
+    //         if (key != null) return true;
+    //     }
+    //     catch { }
+    //     return false;
+    // }
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     private static extern IntPtr GetModuleHandle(string lpModuleName);
