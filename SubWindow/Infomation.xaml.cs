@@ -92,7 +92,7 @@ public partial class Infomation : Window
         {
             var pic = file.Tag.Pictures[0];
             LoadImageFromByte(pic.Data.Data);
-            var result = MessageBox.Show(MainWindow.GetLocalizedString("IsOverridePicture"),
+            var result = MessageBox.Show(this, MainWindow.GetLocalizedString("IsOverridePicture"),
                 MainWindow.GetLocalizedString("Info"), MessageBoxButton.YesNo);
             if (result != MessageBoxResult.Yes)
             {
@@ -127,7 +127,7 @@ public partial class Infomation : Window
         {
             Filter = "*.mp3, *.ogg|*.mp3;*.ogg"
         };
-        if ((bool)openFileDialog.ShowDialog()!) ReadMetadata(openFileDialog.FileName);
+        if (openFileDialog.ShowDialog(this) == true) ReadMetadata(openFileDialog.FileName);
     }
 
     private void SaltImage_MouseDown(object sender, MouseButtonEventArgs e)
@@ -137,7 +137,7 @@ public partial class Infomation : Window
             InitialDirectory = "",
             Filter = "图片|*.png;*.jpg"
         };
-        if ((bool)openFileDialog.ShowDialog()!)
+        if (openFileDialog.ShowDialog(this) == true)
         {
             var data = File.ReadAllBytes(openFileDialog.FileName);
             var info = new FileInfo(openFileDialog.FileName);

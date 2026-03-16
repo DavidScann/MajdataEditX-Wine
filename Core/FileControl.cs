@@ -293,7 +293,7 @@ public partial class MainWindow : Window
     /// <returns>Return false if user cancel the action</returns>
     public bool AskSaveFumen(bool canCancel = true)
     {
-        var result = MessageBox.Show(GetLocalizedString("AskSave"), GetLocalizedString("Warning"),
+        var result = MessageBox.Show(this, GetLocalizedString("AskSave"), GetLocalizedString("Warning"),
             canCancel ? MessageBoxButton.YesNoCancel : MessageBoxButton.YesNo);
         if (result == MessageBoxResult.Yes)
         {

@@ -41,7 +41,7 @@ public partial class MainWindow : Window
         UpdateAndShowErrorList();
         if (lmmdWindow.ErrorList.Count >= 100 && editorSetting!.Language == "zh-CN")
         {
-            MessageBox.Show("我将删除你的Majdata。");
+            MessageBox.Show(this, "我将删除你的Majdata。");
         }
     }
     public async Task ShowSyntaxErrorAsync()
@@ -286,7 +286,7 @@ public partial class MainWindow : Window
             {
                 // 网络请求失败
                 if (!onStart)
-                    MessageBox.Show(GetLocalizedString("RequestFail"), GetLocalizedString("CheckUpdate"));
+                    MessageBox.Show(this, GetLocalizedString("RequestFail"), GetLocalizedString("CheckUpdate"));
                 return;
             }
 
@@ -304,6 +304,7 @@ public partial class MainWindow : Window
                 if (onStart) msgboxText += "\n\n" + GetLocalizedString("AutoUpdateCheckTip");
 
                 var result = MessageBox.Show(
+                    this,
                     msgboxText,
                     GetLocalizedString("CheckUpdate"),
                     MessageBoxButton.YesNo);
@@ -323,13 +324,13 @@ public partial class MainWindow : Window
             else
             {
                 // 没有新版本，可以不用更新
-                if (!onStart) MessageBox.Show(GetLocalizedString("NoNewVersion"), GetLocalizedString("CheckUpdate"));
+                if (!onStart) MessageBox.Show(this, GetLocalizedString("NoNewVersion"), GetLocalizedString("CheckUpdate"));
             }
         }
         catch (Exception)
         {
             // 解析失败
-            if (!onStart) MessageBox.Show(GetLocalizedString("RequestFail"), GetLocalizedString("CheckUpdate"));
+            if (!onStart) MessageBox.Show(this, GetLocalizedString("RequestFail"), GetLocalizedString("CheckUpdate"));
         }
     }
 

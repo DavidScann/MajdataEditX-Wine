@@ -675,7 +675,7 @@ public partial class MainWindow : Window
         if (!SafeTerminationDetector.Of().IsLastTerminationSafe())
         {
             // 若上次异常退出，则询问打开恢复窗口
-            var result = MessageBox.Show(GetLocalizedString("AbnormalTerminationInformation"),
+            var result = MessageBox.Show(this, GetLocalizedString("AbnormalTerminationInformation"),
                 GetLocalizedString("Attention"), MessageBoxButton.YesNo);
             if (result == MessageBoxResult.Yes)
             {
@@ -760,7 +760,7 @@ public partial class MainWindow : Window
         var process = Process.GetProcessesByName("MajdataView");
         if (process.Length > 0)
         {
-            var result = MessageBox.Show(GetLocalizedString("AskCloseView"), GetLocalizedString("Attention"),
+            var result = MessageBox.Show(this, GetLocalizedString("AskCloseView"), GetLocalizedString("Attention"),
                 MessageBoxButton.YesNo);
             if (result == MessageBoxResult.Yes)
                 process[0].Kill();
@@ -828,7 +828,7 @@ public partial class MainWindow : Window
         {
             Filter = "track.mp3, track.ogg|track.mp3;track.ogg"
         };
-        if ((bool)openFileDialog.ShowDialog()!)
+        if (openFileDialog.ShowDialog(this) == true)
         {
             var fileInfo = new FileInfo(openFileDialog.FileName);
             CreateNewFumen(fileInfo.DirectoryName!);
@@ -843,7 +843,7 @@ public partial class MainWindow : Window
         {
             Filter = "maidata.txt|maidata.txt"
         };
-        if ((bool)openFileDialog.ShowDialog()!)
+        if (openFileDialog.ShowDialog(this) == true)
         {
             var fileInfo = new FileInfo(openFileDialog.FileName);
             await InitFromFile(fileInfo.DirectoryName!);
@@ -869,7 +869,9 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show(string.Format(GetLocalizedString("ToggleShareFail"), ex.Message + ex.InnerException?.Message), GetLocalizedString("Error"));
+            MessageBox.Show(this,
+                string.Format(GetLocalizedString("ToggleShareFail"), ex.Message + ex.InnerException?.Message),
+                GetLocalizedString("Error"));
             _client = null;
             return;
         }
@@ -941,7 +943,10 @@ public partial class MainWindow : Window
 
     private void MenuItem_InfomationEdit_Click(object? sender, RoutedEventArgs e)
     {
-        var infoWindow = new Infomation();
+        var infoWindow = new Infomation
+        {
+            Owner = this
+        };
         SetSavedState(false);
         infoWindow.ShowDialog();
         TheWindow.Title = GetWindowsTitleString(SimaiProcess.simaiFile.Title);
