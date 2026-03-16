@@ -9,6 +9,8 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+          # yep. this is needed now.
+      - run: git clone https://github.com/re-poem/MajSimai.Extensions.git ../MajSimai.Extensions
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 6.0.x
