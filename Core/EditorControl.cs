@@ -1,6 +1,6 @@
 ﻿using DiscordRPC;
-using MajdataEdit.SyntaxModule;
 using MajdataEdit.Utils;
+using MajSimai.Extensions.Checker;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Semver;
@@ -23,63 +23,84 @@ namespace MajdataEdit;
 public partial class MainWindow : Window
 {
     // edit
-    public void ShowMuriDXError(LaunchMaiMuriDX lmmdWindow)
+    private List<Error> Errors { get; set; } = new();
+
+    public async Task ShowMuriDXErrorAsync(LaunchMaiMuriDX lmmdWindow)
     {
-        SyntaxCheck();
-        for (int i = errorListWindow.ErrorListView.Items.Count - 1; i >= 0; i--)
+        for (int i = Errors.Count - 1; i >= 0; i--)
         {
-            if ((errorListWindow.ErrorListView.Items[i] as Error)!.Type is ErrorType.MuriDXS or ErrorType.MuriDXD)
+            if (Errors[i].Type is ErrorType.MuriDXS or ErrorType.MuriDXD)
             {
-                errorListWindow.ErrorListView.Items.RemoveAt(i);
+                Errors.RemoveAt(i);
             }
         }
-        var errList = lmmdWindow.ErrorList;
-        errList.ForEach(e =>
-        {
-            errorListWindow.ErrorListView.Items.Add(e);
-        });
-        if (errorListWindow.IsVisible) errorListWindow.Activate();
-        else errorListWindow.Show();
-        if (errList.Count >= 100 && editorSetting!.Language == "zh-CN")
+
+        Errors.AddRange(lmmdWindow.ErrorList);
+
+
+        UpdateAndShowErrorList();
+        if (lmmdWindow.ErrorList.Count >= 100 && editorSetting!.Language == "zh-CN")
         {
             MessageBox.Show("我将删除你的Majdata。");
         }
     }
-    public void ShowSyntaxError()
+    public async Task ShowSyntaxErrorAsync()
     {
-        SyntaxCheck();
-        for (int i = errorListWindow.ErrorListView.Items.Count - 1; i >= 0; i--)
-        {
-            if ((errorListWindow.ErrorListView.Items[i] as Error)!.Type == ErrorType.Syntax)
-            {
-                errorListWindow.ErrorListView.Items.RemoveAt(i);
-            }
-        }
-        var errListCopy = SyntaxChecker.ErrorList.ToList();
-        errListCopy.ForEach(e =>
-        {
-            errorListWindow.ErrorListView.Items.Add(e);
-        });
-        if (errorListWindow.IsVisible) errorListWindow.Activate();
-        else errorListWindow.Show();
+        if (!await SyntaxCheck()) return;
+
+        UpdateAndShowErrorList();
     }
-    public async void ShowSerializeError()
-    {
-        await SimaiProcess.Serialize(GetRawFumenText());
-        InvalidateBeatCache();
-    }
-    public async void SyntaxCheck()
+
+    public async Task<bool> SyntaxCheck()
     {
         try
         {
-            SyntaxChecker.Scan(GetRawFumenText());
-            set_err_count(SyntaxChecker.ErrorList.Count);
+            var checkTask = Task.FromResult(SimaiChecker.Check(GetRawFumenText()));
+            if (checkTask.IsCompletedSuccessfully)
+            {
+                var result = checkTask.Result;
+                set_err_count(result.Count);
+
+                for (int i = Errors.Count - 1; i >= 0; i--)
+                {
+                    if (Errors[i].Type == ErrorType.Syntax)
+                    {
+                        Errors.RemoveAt(i);
+                    }
+                }
+                foreach (var error in result)
+                {
+                    Errors.Add(new(ErrorType.Syntax,
+                                    new Position(error.Position.Column, error.Position.Line),
+                                    error.Message, error.Detail));
+                }
+                return true;
+            }
+            else
+            {
+                set_err_count(GetLocalizedString("InternalErr"));
+                return false;
+            }
         }
         catch
         {
             set_err_count(GetLocalizedString("InternalErr"));
+            return false;
         }
     }
+
+    private void UpdateAndShowErrorList()
+    {
+        errorListWindow.ErrorListView.Items.Clear();
+        foreach (Error error in Errors)
+        {
+            errorListWindow.ErrorListView.Items.Add(error);
+        }
+        if (errorListWindow.IsVisible) errorListWindow.Activate();
+        else errorListWindow.Show();
+    }
+
+
     private void SwitchFumenOverwriteMode()
     {
         fumenOverwriteMode = !fumenOverwriteMode;

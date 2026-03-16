@@ -168,7 +168,7 @@
                 TextChanged="FumenContent_TextChanged"
                 SelectionChanged="FumenContent_SelectionChanged" 
                 PreviewKeyDown="FumenContent_OnPreviewKeyDown" 
-                Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" MouseWheel="FumenContent_MouseWheel">
+                Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" PreviewMouseWheel="FumenContent_PreviewMouseWheel">
             <TextBox.Background>
                 <SolidColorBrush Color="#FF050505" Opacity="0.3" />
             </TextBox.Background>

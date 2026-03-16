@@ -2,7 +2,6 @@
 using MajdataEdit.AutoSaveModule;
 using MajdataEdit.ChartShare;
 using MajdataEdit.MaiMuriDX;
-using MajdataEdit.SyntaxModule;
 using MajdataEdit.Utils;
 using MajSimai;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -488,7 +487,7 @@ public partial class MainWindow : Window
                         var xRight = x + (float)(noteD.HoldTime / step) * linewidth;
 
                         //1h[0:1]
-                        if (!float.IsNormal(xRight)) xRight = ushort.MaxValue;
+                        if (!float.IsNormal(xRight) || xRight > ushort.MaxValue) xRight = ushort.MaxValue;
                         if (xRight - x < 1f) xRight = x + 5;
                         graphics.DrawLine(_cachedNotePen, x, y, xRight, y);
 
@@ -545,7 +544,7 @@ public partial class MainWindow : Window
                         var xSlide = (float)(noteD.SlideStartTime / step - startindex) * linewidth;
                         var xSlideRight = (float)(noteD.SlideTime / step) * linewidth + xSlide;
 
-                        if (!float.IsNormal(xSlideRight)) xSlideRight = ushort.MaxValue;
+                        if (!float.IsNormal(xSlideRight) || xSlideRight > ushort.MaxValue) xSlideRight = ushort.MaxValue;
                         if (!float.IsNormal(xSlide)) xSlide = ushort.MaxValue;
 
                         graphics.DrawLine(_cachedNotePen, xSlide, y, xSlideRight, y);
@@ -773,7 +772,8 @@ public partial class MainWindow : Window
         soundSetting.Close();
         //if (bpmtap != null) { bpmtap.Close(); }
         //if (muriCheck != null) { muriCheck.Close(); }
-        //SaveSetting();
+        //SaveSetting(); 
+        SaveEditorSetting(); //改了字体大小的话
 
         Bass.BASS_ChannelStop(bgmStream);
         Bass.BASS_StreamFree(bgmStream);
@@ -967,17 +967,11 @@ public partial class MainWindow : Window
         soundSetting.ShowDialog();
     }
 
-    private void SyntaxCheckButton_Click(object sender, RoutedEventArgs e)
+    private async void SyntaxCheckButton_Click(object sender, EventArgs e)
     {
-        try
+        if (await SyntaxCheck())
         {
-            SyntaxChecker.Scan(GetRawFumenText());
-            set_err_count(SyntaxChecker.GetErrorCount());
-            Dispatcher.Invoke(() => { ShowSyntaxError(); });
-        }
-        catch
-        {
-            set_err_count(GetLocalizedString("InternalErr"));
+            await Dispatcher.Invoke(async () => { await ShowSyntaxErrorAsync(); });
         }
     }
 
@@ -986,20 +980,6 @@ public partial class MainWindow : Window
         LaunchMaiMuriDX window = new(new RunArg(GetRawFumenText(), float.Parse(OffsetTextBox.Text), audioDir, false));
         window.Owner = this;
         window.Show();
-    }
-
-    private void SyntaxCheckButton_Click(object sender, MouseButtonEventArgs e)
-    {
-        try
-        {
-            SyntaxChecker.Scan(GetRawFumenText());
-            set_err_count(SyntaxChecker.GetErrorCount());
-            Dispatcher.Invoke(() => { ShowSyntaxError(); });
-        }
-        catch
-        {
-            set_err_count(GetLocalizedString("InternalErr"));
-        }
     }
 
     private void MenuItem_EditorSetting_Click(object? sender, RoutedEventArgs e)
@@ -1184,7 +1164,7 @@ public partial class MainWindow : Window
     }
     #endregion
 
-    #region RichTextbox events
+    #region Textbox events
 
     private async void FumenContent_SelectionChanged(object sender, RoutedEventArgs e)
     {
@@ -1241,7 +1221,7 @@ public partial class MainWindow : Window
 
     private async void FumenContent_TextChanged(object sender, TextChangedEventArgs e)
     {
-        if (GetRawFumenText() == "" || IsLoading) return;
+        if (IsLoading) return;
         SetSavedState(false);
         await SyncChartServer(); //立马同步，用了diff的原因，没那么卡
 
@@ -1258,7 +1238,7 @@ public partial class MainWindow : Window
         chartChangeTimer.Start();
     }
 
-    private void FumenContent_MouseWheel(object sender, MouseWheelEventArgs e)
+    private void FumenContent_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
         if (Keyboard.Modifiers == ModifierKeys.Control)
         {
@@ -1268,6 +1248,8 @@ public partial class MainWindow : Window
                 editorSetting!.FontSize = (float)size;
                 FumenContent.FontSize = size;
             }
+
+            e.Handled = true;
         }
     }
 

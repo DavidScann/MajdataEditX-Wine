@@ -7,13 +7,13 @@ namespace MajdataEdit.Utils;
 
 public static class WebControl
 {
+    public static readonly HttpClient client = new();
+
     // For View
     public static string RequestPOST(string url, string data = "")
     {
         try
         {
-            using var client = new HttpClient();
-
             var webRequest = new HttpRequestMessage(HttpMethod.Post, url)
             {
                 Content = new StringContent(data, Encoding.UTF8)
@@ -37,12 +37,11 @@ public static class WebControl
         {
             var executingAssembly = Assembly.GetExecutingAssembly();
 
-            using var httpClient = new HttpClient();
             var request = new HttpRequestMessage(HttpMethod.Get, url);
 
             request.Headers.Add("User-Agent", $"{executingAssembly.GetName().Name!} / {executingAssembly.GetName().Version!.ToString(3)}");
 
-            var response = await httpClient.SendAsync(request);
+            var response = await client.SendAsync(request);
             return await response.Content.ReadAsStringAsync();
         }
         catch

@@ -1,7 +1,6 @@
 ﻿using MajdataEdit.AutoSaveModule;
 using MajdataEdit.ChartShare;
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Win32;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.IO;

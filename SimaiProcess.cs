@@ -94,6 +94,7 @@ internal static class SimaiProcess
             noteLists[selectedDiff] = new();
             timingLists[selectedDiff] = new();
             var chart = await SimaiParser.ParseChartAsync(text);
+            fumens[selectedDiff] = text;
             OriginNoteLists[selectedDiff] = chart.NoteTimings.ToArray().ToList();
             OriginTimingLists[selectedDiff] = chart.CommaTimings.ToArray().ToList();
             noteLists[selectedDiff] = new(OriginNoteLists[selectedDiff]);
