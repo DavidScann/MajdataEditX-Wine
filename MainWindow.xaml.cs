@@ -56,6 +56,7 @@ public partial class MainWindow : Window
         }
 
         // ready for play
+        MenuBar.IsEnabled = true;
         Op_Button.IsEnabled = true;
         PlayAndPauseButton.Content = "▶";
 
@@ -1103,18 +1104,22 @@ public partial class MainWindow : Window
     private async void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         set_loading(true);
-
-        var i = LevelSelector.SelectedIndex;
-        SetRawFumenText(SimaiProcess.fumens[i]);
-        selectedDifficulty = i;
-        LevelTextBox.Text = SimaiProcess.levels[selectedDifficulty];
-        SetSavedState(true);
-        await SimaiProcess.Serialize(GetRawFumenText());
-        InvalidateBeatCache();
-        draw_wave();
-        SyntaxCheck();
-
-        set_loading(false);
+        try
+        {
+            var i = LevelSelector.SelectedIndex;
+            SetRawFumenText(SimaiProcess.fumens[i]);
+            selectedDifficulty = i;
+            LevelTextBox.Text = SimaiProcess.levels[selectedDifficulty];
+            SetSavedState(true);
+            await SimaiProcess.Serialize(GetRawFumenText());
+            InvalidateBeatCache();
+            draw_wave();
+            SyntaxCheck();
+        }
+        finally
+        {
+            set_loading(false);
+        }
     }
 
     private void LevelTextBox_TextChanged(object sender, TextChangedEventArgs e)

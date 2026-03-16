@@ -70,7 +70,7 @@
         <Line StrokeThickness="3" Y2="56" Height="74" VerticalAlignment="Bottom" Stroke="Red" Y1="15"
               HorizontalAlignment="Center" Width="45" Grid.ColumnSpan="2" Grid.RowSpan="2" Grid.Row="0" Grid.Column="1" Margin="43,0,0,0" />
 
-        <DockPanel Height="19" VerticalAlignment="Top" Grid.ColumnSpan="3" Grid.RowSpan="2" Background="{DynamicResource ButtonsBackground}">
+        <DockPanel Height="19" VerticalAlignment="Top" Grid.ColumnSpan="3" Grid.RowSpan="2" Background="{DynamicResource ButtonsBackground}" Panel.ZIndex="10">
             <ProgressBar x:Name="Menu_ProcessStatus" IsIndeterminate="True"
                  DockPanel.Dock="Right" Background="{DynamicResource ButtonsBackground}"
                  Width="100" Height="12" 
@@ -333,7 +333,7 @@
                 <TextBlock TextDecorations="Underline" FontSize="10" Text="{lex:Loc Key=WhatsThis}" />
             </Label>
         </StackPanel>
-        <Rectangle x:Name="Cover" Fill="#FF1F1F1F" Margin="0,18,0,0" Stroke="Black" Grid.ColumnSpan="3" Grid.RowSpan="2" Grid.Row="1" Opacity="1" d:IsHidden="True"/>
+        <Rectangle x:Name="Cover" Fill="#FF1F1F1F" Margin="0,19,0,0" Stroke="Black" Grid.ColumnSpan="3" Grid.RowSpan="2" Grid.Row="1" Opacity="1" d:IsHidden="True"/>
         <StatusBar Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Height="20" Background="{StaticResource WindowBackground}">
             <StatusBarItem>
                 <TextBlock x:Name="ShareStatus" Foreground="{StaticResource HelperForeground}"/>
