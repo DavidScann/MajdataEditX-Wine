@@ -80,7 +80,7 @@
                  Visibility="Collapsed"/>
 
             <Menu x:Name="MenuBar" Foreground="{DynamicResource ButtonForeground}" Background="{DynamicResource ButtonsBackground}"
-                  SubmenuOpened="MenuBar_SubmenuOpened" SubmenuClosed="MenuBar_SubmenuClosed" IsKeyboardFocusWithinChanged="MenuBar_IsKeyboardFocusWithinChanged">
+                  MenuItem.SubmenuOpened="MenuBar_SubmenuOpened" MenuItem.SubmenuClosed="MenuBar_SubmenuClosed" IsKeyboardFocusWithinChanged="MenuBar_IsKeyboardFocusWithinChanged">
                 <MenuItem Header="{lex:Loc Files}" Foreground="{DynamicResource ButtonForeground}"
                       Template="{DynamicResource DarkMenuItem}">
                     <MenuItem x:Name="Menu_New" Header="{lex:Loc New}" Click="Menu_New_Click" />
