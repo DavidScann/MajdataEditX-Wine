@@ -1387,9 +1387,9 @@ public partial class MainWindow : Window
         Console.WriteLine("[WINE-DEBUG] Window Activated");
     }
 
-    protected override void OnPreviewGotFocus(KeyboardFocusChangedEventArgs e)
+    protected override void OnPreviewGotKeyboardFocus(KeyboardFocusChangedEventArgs e)
     {
-        base.OnPreviewGotFocus(e);
+        base.OnPreviewGotKeyboardFocus(e);
         Console.WriteLine($"[WINE-DEBUG] Focus shift to: {e.NewValue}");
     }
 }
