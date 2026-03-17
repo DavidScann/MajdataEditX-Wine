@@ -1378,6 +1378,18 @@ public partial class MainWindow : Window
 
     private void MenuBar_IsKeyboardFocusWithinChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        Console.WriteLine($"[WINE-DEBUG] IsKeyboardFocusWithinChanged: Old={e.OldValue}, New={e.NewValue}");
+        Console.WriteLine($"[WINE-DEBUG] MenuBar FocusWithin: {e.NewValue}");
+    }
+
+    protected override void OnActivated(EventArgs e)
+    {
+        base.OnActivated(e);
+        Console.WriteLine("[WINE-DEBUG] Window Activated");
+    }
+
+    protected override void OnPreviewGotFocus(KeyboardFocusChangedEventArgs e)
+    {
+        base.OnPreviewGotFocus(e);
+        Console.WriteLine($"[WINE-DEBUG] Focus shift to: {e.NewValue}");
     }
 }
