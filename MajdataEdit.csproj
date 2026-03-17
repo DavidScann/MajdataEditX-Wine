@@ -20,12 +20,6 @@
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
       <Optimize>True</Optimize>
     </PropertyGroup>
-    <PropertyGroup>
-      <ServerGarbageCollection>true</ServerGarbageCollection>
-      <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
-      <TieredCompilation>true</TieredCompilation>
-      <TieredPGO>true</TieredPGO>
-    </PropertyGroup>
     <ItemGroup>
       <None Remove="Resources\bg_dummy.jpg" />
       <None Remove="Resources\outline_find_replace_white_24dp.png" />

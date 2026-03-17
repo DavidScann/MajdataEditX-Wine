@@ -1365,4 +1365,19 @@ public partial class MainWindow : Window
             _ => 1f
         };
     }
+
+    private void MenuBar_SubmenuOpened(object sender, RoutedEventArgs e)
+    {
+        Console.WriteLine($"[WINE-DEBUG] SubmenuOpened: {e.Source}");
+    }
+
+    private void MenuBar_SubmenuClosed(object sender, RoutedEventArgs e)
+    {
+        Console.WriteLine($"[WINE-DEBUG] SubmenuClosed: {e.Source}");
+    }
+
+    private void MenuBar_IsKeyboardFocusWithinChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        Console.WriteLine($"[WINE-DEBUG] IsKeyboardFocusWithinChanged: Old={e.OldValue}, New={e.NewValue}");
+    }
 }
