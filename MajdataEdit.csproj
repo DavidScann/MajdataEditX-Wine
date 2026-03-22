@@ -54,6 +54,10 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>bass_fx.dll</TargetPath>
         </ContentWithTargetPath>
+        <ContentWithTargetPath Include="bass_opus.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>bass_opus.dll</TargetPath>
+        </ContentWithTargetPath>
         <ContentWithTargetPath Include="slide_time.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>slide_time.json</TargetPath>
