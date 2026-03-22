@@ -1,18 +1,39 @@
 name: Build
 run-name: Build editor exe
-on: [push, pull_request]
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-dotnet@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 6.0.x
-      - run: dotnet restore
-      - run: dotnet publish -c Release -r win-x64 --no-self-contained
-      - run: ls -R
-      - uses: actions/upload-artifact@v3
+          dotnet-version: '6.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build project
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Publish project
+        run: dotnet publish -c Release -r win-x64 --no-self-contained
+
+      - name: List build output
+        run: ls -R bin/Release/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: Build
-          path: bin\Release\net6.0-windows\win-x64\publish
+          name: MajdataEdit-Build
+          path: bin/Release/net6.0-windows/win-x64/publish/
+          if-no-files-found: error
