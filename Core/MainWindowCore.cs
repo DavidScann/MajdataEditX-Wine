@@ -11,6 +11,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using Un4seen.Bass;
 using WPFLocalizeExtension.Extensions;
 using Font = System.Drawing.Font;
 using Pen = System.Drawing.Pen;
