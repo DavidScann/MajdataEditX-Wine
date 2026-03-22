@@ -67,6 +67,10 @@
       <ProjectReference Include="MajSimaiX\MajSimai.csproj" />
     </ItemGroup>
     <ItemGroup>
+      <Compile Remove="MajSimai.Extensions\**\*.cs" />
+      <Compile Remove="MajSimaiX\**\*.cs" />
+    </ItemGroup>
+    <ItemGroup>
       <Resource Include="Resources\bg_dummy.jpg" />
       <Resource Include="Resources\outline_find_replace_white_24dp.png" />
       <Resource Include="Resources\outline_search_white_24dp.png" />
