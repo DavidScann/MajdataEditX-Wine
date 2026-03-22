@@ -103,8 +103,14 @@ public partial class MainWindow : Window
         Bass.BASS_ChannelSetAttribute(hanabiStream, BASSAttribute.BASS_ATTRIB_VOL, editorSetting!.Default_Hanabi_Level);
         Bass.BASS_ChannelSetAttribute(holdRiserStream, BASSAttribute.BASS_ATTRIB_VOL,
             editorSetting!.Default_Hanabi_Level);
-        var info = Bass.BASS_ChannelGetInfo(bgmStream);
-        if (info.freq != 44100) MessageBox.Show(GetLocalizedString("Warn44100Hz"), GetLocalizedString("Attention"));
+            var info = Bass.BASS_ChannelGetInfo(bgmStream);
+            if (info == null)
+            {
+                MessageBox.Show(GetLocalizedString("AudioLoadError"), GetLocalizedString("Error"));
+                set_loading(false);
+                return;
+            }
+            if (info.freq != 44100) MessageBox.Show(GetLocalizedString("Warn44100Hz"), GetLocalizedString("Attention"));
         
         // decode wave
         ReadWaveFromFile();
@@ -199,6 +205,12 @@ public partial class MainWindow : Window
             Bass.BASS_ChannelSetAttribute(holdRiserStream, BASSAttribute.BASS_ATTRIB_VOL, setting.Hanabi_Level);
 
             var info = Bass.BASS_ChannelGetInfo(bgmStream);
+            if (info == null)
+            {
+                MessageBox.Show(GetLocalizedString("AudioLoadError"), GetLocalizedString("Error"));
+                set_loading(false);
+                return;
+            }
             if (info.freq != 44100) MessageBox.Show(GetLocalizedString("Warn44100Hz"), GetLocalizedString("Attention"));
 
             // decode wave
