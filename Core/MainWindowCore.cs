@@ -4,6 +4,7 @@ using MajdataEdit.ChartShare;
 using Microsoft.AspNetCore.SignalR.Client;
 using Semver;
 using System;
+using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -11,6 +12,8 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using WPFLocalizeExtension.Extensions;
+using Font = System.Drawing.Font;
+using Pen = System.Drawing.Pen;
 using Timer = System.Timers.Timer;
 
 namespace MajdataEdit;
