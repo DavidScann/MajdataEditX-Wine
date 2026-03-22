@@ -20,13 +20,13 @@ jobs:
           dotnet-version: '6.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore MajdataEdit.csproj
 
       - name: Build project
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build MajdataEdit.csproj --configuration Release --no-restore
 
       - name: Publish project
-        run: dotnet publish -c Release -r win-x64 --no-self-contained
+        run: dotnet publish MajdataEdit.csproj -c Release -r win-x64 --no-self-contained --no-restore
 
       - name: List build output
         run: ls -R bin/Release/
