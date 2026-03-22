@@ -41,7 +41,7 @@ public partial class MainWindow : Window
         Op_Button.IsEnabled = false;
         isPlaying = true;
         isPlan2Stop = false;
-        PlayAndPauseButton.Content = "  ▌▌ ";
+        PlayAndPauseButton.Content = " ▌▌ ";
 
         await SimaiProcess.Serialize(GetRawFumenText());
         InvalidateBeatCache();

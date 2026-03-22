@@ -3,12 +3,15 @@ using DiscordRPC;
 using MajdataEdit.ChartShare;
 using Microsoft.AspNetCore.SignalR.Client;
 using Semver;
+using System;
 using System.Drawing;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using Un4seen.Bass;
 using WPFLocalizeExtension.Extensions;
 using Font = System.Drawing.Font;
 using Pen = System.Drawing.Pen;
@@ -62,6 +65,9 @@ public partial class MainWindow : Window
     public bool needChangeTime = false;
 
     // Audio
+    private static readonly string[] BassOpusPluginFileNames = { "bass_opus.dll", "bassopus.dll" };
+    private int bassOpusPluginHandle;
+    private bool bassOpusPluginLoaded;
     private SoundSetting soundSetting = new();
     public float originFreq = 44100f;
 
@@ -156,6 +162,92 @@ public partial class MainWindow : Window
         locExtension.ResolveLocalizedValue(out string? localizedString);
 
         return localizedString ?? key;
+    }
+
+    // Beat cache management - invalidate when chart changes, rebuild lazily when drawing
+    private void InvalidateBeatCache()
+    {
+        _beatCacheDirty = true;
+    }
+
+    private void RebuildBeatCacheIfNeeded()
+    {
+        if (!_beatCacheDirty && _beatCacheDifficulty == selectedDifficulty) return;
+        _beatCacheDirty = false;
+        _beatCacheDifficulty = selectedDifficulty;
+        _cachedStrongBeats.Clear();
+        _cachedWeakBeats.Clear();
+
+        // Extract BPM change points
+        var bpmChanges = new List<(double Time, float Bpm, int Numerator, int Denominator)>();
+        float lastBpm = -1f;
+        int lastNum = -1;
+        int lastDen = -1;
+
+        foreach (var timing in SimaiProcess.timingLists[selectedDifficulty] ?? new())
+        {
+            if (timing == null) continue;
+            if (timing.Bpm != lastBpm || timing.SignatureNumerator != lastNum || timing.SignatureDenominator != lastDen)
+            {
+                bpmChanges.Add((timing.Timing, timing.Bpm, timing.SignatureNumerator, timing.SignatureDenominator));
+                lastBpm = timing.Bpm;
+                lastNum = timing.SignatureNumerator;
+                lastDen = timing.SignatureDenominator;
+            }
+        }
+
+        double audioEndTime = Bass.BASS_ChannelBytes2Seconds(bgmStream, Bass.BASS_ChannelGetLength(bgmStream));
+        bpmChanges.Add((audioEndTime, lastBpm, lastNum, lastDen));
+
+        double time = SimaiProcess.simaiFile.Offset;
+        int currentBeat = 1;
+
+        for (var i = 0; i < bpmChanges.Count - 1; i++)
+        {
+            var (Time, Bpm, Numerator, Denominator) = bpmChanges[i];
+            var nextSegTime = bpmChanges[i + 1].Time;
+
+            while (time < nextSegTime - 0.05)
+            {
+                if (currentBeat > Numerator) currentBeat = 1;
+                double timePerBeat = (60d / Bpm) * (4.0 / Denominator);
+
+                if (currentBeat == 1)
+                    _cachedStrongBeats.Add(time);
+                else
+                    _cachedWeakBeats.Add(time);
+
+                currentBeat++;
+                time += timePerBeat;
+            }
+
+            time = nextSegTime;
+            currentBeat = 1;
+        }
+    }
+
+    protected void TryLoadBassOpusPlugin()
+    {
+        if (bassOpusPluginLoaded) return;
+        foreach (var pluginFileName in BassOpusPluginFileNames)
+        {
+            var pluginPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, pluginFileName);
+            if (!File.Exists(pluginPath)) continue;
+            bassOpusPluginHandle = Bass.BASS_PluginLoad(pluginPath);
+            if (bassOpusPluginHandle != 0)
+            {
+                bassOpusPluginLoaded = true;
+                return;
+            }
+        }
+    }
+
+    protected bool ShowOpusPluginHint(string audioPath)
+    {
+        if (bassOpusPluginLoaded) return false;
+        if (!".ogg".Equals(Path.GetExtension(audioPath), StringComparison.OrdinalIgnoreCase)) return false;
+        MessageBox.Show(GetLocalizedString("OpusPluginMissing"), GetLocalizedString("Error"));
+        return true;
     }
 
     // 获取本机局域网IP

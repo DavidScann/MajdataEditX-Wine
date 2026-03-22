@@ -130,6 +130,74 @@ public partial class MainWindow : Window
             FumenContent.IsUndoEnabled = true;
             set_loading(false);
         }
+        maidataDir = path;
+
+        // about save
+        SafeTerminationDetector.Of().ChangePath(maidataDir);
+
+        // music initalize
+        var decodeStream = Bass.BASS_StreamCreateFile(audioPath, 0L, 0L, BASSFlag.BASS_STREAM_DECODE | BASSFlag.BASS_STREAM_PRESCAN);
+        if (decodeStream == 0)
+        {
+            if (!ShowOpusPluginHint(audioPath))
+                MessageBox.Show(GetLocalizedString("AudioLoadError"), GetLocalizedString("Error"));
+            set_loading(false);
+            return;
+        }
+        bgmStream = BassFx.BASS_FX_TempoCreate(decodeStream, BASSFlag.BASS_FX_FREESOURCE);
+        Bass.BASS_ChannelGetAttribute(bgmStream, BASSAttribute.BASS_ATTRIB_FREQ, ref originFreq);
+
+        Bass.BASS_ChannelSetAttribute(bgmStream, BASSAttribute.BASS_ATTRIB_VOL, editorSetting!.Default_BGM_Level);
+        Bass.BASS_ChannelSetAttribute(trackStartStream, BASSAttribute.BASS_ATTRIB_VOL, editorSetting!.Default_BGM_Level);
+        Bass.BASS_ChannelSetAttribute(allperfectStream, BASSAttribute.BASS_ATTRIB_VOL, editorSetting!.Default_BGM_Level);
+        Bass.BASS_ChannelSetAttribute(fanfareStream, BASSAttribute.BASS_ATTRIB_VOL, editorSetting!.Default_BGM_Level);
+        Bass.BASS_ChannelSetAttribute(clockStream, BASSAttribute.BASS_ATTRIB_VOL, editorSetting!.Default_BGM_Level);
+        Bass.BASS_ChannelSetAttribute(answerStream, BASSAttribute.BASS_ATTRIB_VOL, editorSetting!.Default_Answer_Level);
+        Bass.BASS_ChannelSetAttribute(judgeStream, BASSAttribute.BASS_ATTRIB_VOL, editorSetting!.Default_Judge_Level);
+        Bass.BASS_ChannelSetAttribute(judgeBreakStream, BASSAttribute.BASS_ATTRIB_VOL,
+            editorSetting!.Default_Break_Level);
+        Bass.BASS_ChannelSetAttribute(judgeBreakSlideStream, BASSAttribute.BASS_ATTRIB_VOL,
+            editorSetting!.Default_Break_Slide_Level);
+        Bass.BASS_ChannelSetAttribute(slideStream, BASSAttribute.BASS_ATTRIB_VOL, editorSetting!.Default_Slide_Level);
+        Bass.BASS_ChannelSetAttribute(breakSlideStartStream, BASSAttribute.BASS_ATTRIB_VOL,
+            editorSetting!.Default_Slide_Level);
+        Bass.BASS_ChannelSetAttribute(breakStream, BASSAttribute.BASS_ATTRIB_VOL, editorSetting!.Default_Break_Level);
+        Bass.BASS_ChannelSetAttribute(breakSlideStream, BASSAttribute.BASS_ATTRIB_VOL,
+            editorSetting!.Default_Break_Slide_Level);
+        Bass.BASS_ChannelSetAttribute(judgeExStream, BASSAttribute.BASS_ATTRIB_VOL, editorSetting!.Default_Ex_Level);
+        Bass.BASS_ChannelSetAttribute(touchStream, BASSAttribute.BASS_ATTRIB_VOL, editorSetting!.Default_Touch_Level);
+        Bass.BASS_ChannelSetAttribute(hanabiStream, BASSAttribute.BASS_ATTRIB_VOL, editorSetting!.Default_Hanabi_Level);
+        Bass.BASS_ChannelSetAttribute(holdRiserStream, BASSAttribute.BASS_ATTRIB_VOL,
+            editorSetting!.Default_Hanabi_Level);
+            var info = Bass.BASS_ChannelGetInfo(bgmStream);
+            if (info == null)
+            {
+                MessageBox.Show(GetLocalizedString("AudioLoadError"), GetLocalizedString("Error"));
+                set_loading(false);
+                return;
+            }
+            if (info.freq != 44100) MessageBox.Show(GetLocalizedString("Warn44100Hz"), GetLocalizedString("Attention"));
+        
+        // decode wave
+        ReadWaveFromFile();
+
+        // load data
+        await SimaiProcess.ReadAll(dataPath);
+        LevelSelector.SelectedItem = LevelSelector.Items[0];
+        ReadSetting();
+        SetRawFumenText(SimaiProcess.fumens[selectedDifficulty]);
+        await SimaiProcess.Serialize(GetRawFumenText());
+        InvalidateBeatCache();
+        SeekTextFromTime();
+        OffsetTextBox.Text = SimaiProcess.simaiFile.Offset.ToString();
+
+        AutoSaveManager.Of().SetAutoSaveEnable(true);
+        SetSavedState(true);
+        SyntaxCheck();
+
+        FumenContent.IsUndoEnabled = true;
+
+        set_loading(false);
     }
 
     public async Task InitFromShare(string fileUrl, GuestInitDto data)
@@ -179,6 +247,13 @@ public partial class MainWindow : Window
 
             // music initalize
             var decodeStream = Bass.BASS_StreamCreateFile(audioDir, 0L, 0L, BASSFlag.BASS_STREAM_DECODE | BASSFlag.BASS_STREAM_PRESCAN);
+            if (decodeStream == 0)
+            {
+                if (!ShowOpusPluginHint(audioDir))
+                    MessageBox.Show(GetLocalizedString("AudioLoadError"), GetLocalizedString("Error"));
+                set_loading(false);
+                return;
+            }
             bgmStream = BassFx.BASS_FX_TempoCreate(decodeStream, BASSFlag.BASS_FX_FREESOURCE);
             Bass.BASS_ChannelGetAttribute(bgmStream, BASSAttribute.BASS_ATTRIB_FREQ, ref originFreq);
 
@@ -204,18 +279,24 @@ public partial class MainWindow : Window
             Bass.BASS_ChannelSetAttribute(holdRiserStream, BASSAttribute.BASS_ATTRIB_VOL, setting.Hanabi_Level);
 
             var info = Bass.BASS_ChannelGetInfo(bgmStream);
+            if (info == null)
+            {
+                MessageBox.Show(GetLocalizedString("AudioLoadError"), GetLocalizedString("Error"));
+                set_loading(false);
+                return;
+            }
             if (info.freq != 44100) MessageBox.Show(GetLocalizedString("Warn44100Hz"), GetLocalizedString("Attention"));
 
             // decode wave
             ReadWaveFromFile();
 
 
-            // load data
-            //if (!SimaiProcess.ReadData(dataPath)) return;
-            SetRawFumenText(SimaiProcess.fumens[selectedDifficulty]);
-            await SimaiProcess.Serialize(GetRawFumenText());
-            InvalidateBeatCache();
-            SimaiProcess.simaiFile.Title = data.Name;
+        // load data
+        //if (!SimaiProcess.ReadData(dataPath)) return;
+        SetRawFumenText(SimaiProcess.fumens[selectedDifficulty]);
+        await SimaiProcess.Serialize(GetRawFumenText());
+        InvalidateBeatCache();
+        SimaiProcess.simaiFile.Title = data.Name;
             SimaiProcess.simaiFile.Offset = data.Offset;
             selectedDifficulty = data.Diff;
             SimaiProcess.levels[selectedDifficulty] = data.Level;
@@ -287,7 +368,7 @@ public partial class MainWindow : Window
             File.WriteAllText(path + "/maidata.txt",
                 "&title=" + GetLocalizedString("SetTitle") + "\n" +
                 "&artist=" + GetLocalizedString("SetArtist") + "\n" +
-                "&des=" + GetLocalizedString("SetDes") + "\n" +
+                // "&des=" + GetLocalizedString("SetDes") + "\n" +
                 "&first=0\n");
     }
 

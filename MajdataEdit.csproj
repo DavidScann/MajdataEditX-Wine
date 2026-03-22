@@ -15,7 +15,7 @@
         <UseApplicationTrust>false</UseApplicationTrust>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <PlatformTarget>x64</PlatformTarget>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
       <Optimize>True</Optimize>
@@ -54,6 +54,10 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>bass_fx.dll</TargetPath>
         </ContentWithTargetPath>
+        <ContentWithTargetPath Include="bass_opus.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>bass_opus.dll</TargetPath>
+        </ContentWithTargetPath>
         <ContentWithTargetPath Include="slide_time.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>slide_time.json</TargetPath>
@@ -64,7 +68,12 @@
         </ContentWithTargetPath>
     </ItemGroup>
     <ItemGroup>
+      <ProjectReference Include="MajSimai.Extensions\MajSimai.Extensions\MajSimai.Extensions.csproj" />
       <ProjectReference Include="MajSimaiX\MajSimai.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <Compile Remove="MajSimai.Extensions\**\*.cs" />
+      <Compile Remove="MajSimaiX\**\*.cs" />
     </ItemGroup>
     <ItemGroup>
       <Resource Include="Resources\bg_dummy.jpg" />
