@@ -78,6 +78,13 @@ public partial class MainWindow : Window
 
         // music initalize
         var decodeStream = Bass.BASS_StreamCreateFile(audioPath, 0L, 0L, BASSFlag.BASS_STREAM_DECODE | BASSFlag.BASS_STREAM_PRESCAN);
+        if (decodeStream == 0)
+        {
+            if (!ShowOpusPluginHint(audioPath))
+                MessageBox.Show(GetLocalizedString("AudioLoadError"), GetLocalizedString("Error"));
+            set_loading(false);
+            return;
+        }
         bgmStream = BassFx.BASS_FX_TempoCreate(decodeStream, BASSFlag.BASS_FX_FREESOURCE);
         Bass.BASS_ChannelGetAttribute(bgmStream, BASSAttribute.BASS_ATTRIB_FREQ, ref originFreq);
 
@@ -121,6 +128,7 @@ public partial class MainWindow : Window
         ReadSetting();
         SetRawFumenText(SimaiProcess.fumens[selectedDifficulty]);
         await SimaiProcess.Serialize(GetRawFumenText());
+        InvalidateBeatCache();
         SeekTextFromTime();
         OffsetTextBox.Text = SimaiProcess.simaiFile.Offset.ToString();
 
@@ -180,6 +188,13 @@ public partial class MainWindow : Window
 
             // music initalize
             var decodeStream = Bass.BASS_StreamCreateFile(audioDir, 0L, 0L, BASSFlag.BASS_STREAM_DECODE | BASSFlag.BASS_STREAM_PRESCAN);
+            if (decodeStream == 0)
+            {
+                if (!ShowOpusPluginHint(audioDir))
+                    MessageBox.Show(GetLocalizedString("AudioLoadError"), GetLocalizedString("Error"));
+                set_loading(false);
+                return;
+            }
             bgmStream = BassFx.BASS_FX_TempoCreate(decodeStream, BASSFlag.BASS_FX_FREESOURCE);
             Bass.BASS_ChannelGetAttribute(bgmStream, BASSAttribute.BASS_ATTRIB_FREQ, ref originFreq);
 
@@ -217,11 +232,12 @@ public partial class MainWindow : Window
             ReadWaveFromFile();
 
 
-            // load data
-            //if (!SimaiProcess.ReadData(dataPath)) return;
-            SetRawFumenText(SimaiProcess.fumens[selectedDifficulty]);
-            await SimaiProcess.Serialize(GetRawFumenText());
-            SimaiProcess.simaiFile.Title = data.Name;
+        // load data
+        //if (!SimaiProcess.ReadData(dataPath)) return;
+        SetRawFumenText(SimaiProcess.fumens[selectedDifficulty]);
+        await SimaiProcess.Serialize(GetRawFumenText());
+        InvalidateBeatCache();
+        SimaiProcess.simaiFile.Title = data.Name;
             SimaiProcess.simaiFile.Offset = data.Offset;
             selectedDifficulty = data.Diff;
             SimaiProcess.levels[selectedDifficulty] = data.Level;

@@ -1,8 +1,7 @@
 name: Build
 run-name: Build editor exe
 on:
-  push:
-    branches: [master, main]
+  push: {}
   pull_request:
     branches: [master, main]
   workflow_dispatch:
@@ -27,6 +26,27 @@ jobs:
 
       - name: Publish project
         run: dotnet publish MajdataEdit.csproj -c Release -r win-x64 --no-self-contained --no-restore
+
+      - name: Download and extract BASS Opus plugin
+        shell: powershell
+        run: |
+          $zipUrl = 'https://www.un4seen.com/files/bassopus24.zip'
+          $zipPath = 'bassopus.zip'
+          Write-Host "Downloading $zipUrl"
+          Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath
+          Write-Host "Extracting $zipPath"
+          Expand-Archive -Path $zipPath -DestinationPath 'bassopus' -Force
+          # Try to find an x64 build first, fall back to the first match
+          $dll = Get-ChildItem -Path .\bassopus -Recurse -Filter 'bass_opus.dll' | Where-Object { $_.FullName -match 'x64' } | Select-Object -First 1
+          if (-not $dll) { $dll = Get-ChildItem -Path .\bassopus -Recurse -Filter 'bass_opus.dll' | Select-Object -First 1 }
+          if ($dll) {
+            $publishDir = 'bin/Release/net6.0-windows7.0/win-x64/publish/'
+            if (-not (Test-Path $publishDir)) { New-Item -ItemType Directory -Path $publishDir -Force | Out-Null }
+            Write-Host "Copying $($dll.FullName) to $publishDir"
+            Copy-Item $dll.FullName -Destination $publishDir -Force
+          } else {
+            Write-Warning 'bass_opus.dll not found in downloaded archive; skipping copy.'
+          }
 
       - name: List build output
         run: ls -R bin/Release/

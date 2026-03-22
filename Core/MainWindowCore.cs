@@ -3,6 +3,8 @@ using DiscordRPC;
 using MajdataEdit.ChartShare;
 using Microsoft.AspNetCore.SignalR.Client;
 using Semver;
+using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -59,12 +61,34 @@ public partial class MainWindow : Window
     public bool needChangeTime = false;
 
     // Audio
+    private const string BassOpusPluginFileName = "bass_opus.dll";
+    private int bassOpusPluginHandle;
+    private bool bassOpusPluginLoaded;
     private SoundSetting soundSetting = new();
     public float originFreq = 44100f;
 
     // UI Draw
-    private readonly Timer visualEffectRefreshTimer = new(1);
+    private readonly Timer visualEffectRefreshTimer = new(16); // ~60fps, was 1ms
     private WriteableBitmap? WaveBitmap;
+
+    // Cached GDI+ drawing objects (reused across frames to reduce GC pressure)
+    private Pen? _cachedWavePen;
+    private Pen? _cachedBeatPenStrong;
+    private Pen? _cachedBeatPenWeak;
+    private Pen? _cachedTimingPen;
+    private Pen? _cachedNotePen;
+    private Pen? _cachedPlayStartPen;
+    private Pen? _cachedGhostCursorPen;
+    private Pen? _cachedFFTPen;
+    private Font? _cachedStarFont;
+    private readonly List<PointF> _reusablePointList = new(2048);
+
+    // Cached beat positions (only recalculated when chart changes, NOT every frame)
+    private List<double> _cachedStrongBeats = new(256);
+    private List<double> _cachedWeakBeats = new(1024);
+    private bool _beatCacheDirty = true;
+    private int _beatCacheDifficulty = -1;
+    private int _fftFrameCounter = 0; // used to skip FFT frames during playback
 
     // Error Handle
     private static ErrorList errorListWindow = new();
@@ -128,6 +152,85 @@ public partial class MainWindow : Window
         locExtension.ResolveLocalizedValue(out string? localizedString);
 
         return localizedString ?? key;
+    }
+
+    // Beat cache management - invalidate when chart changes, rebuild lazily when drawing
+    private void InvalidateBeatCache()
+    {
+        _beatCacheDirty = true;
+    }
+
+    private void RebuildBeatCacheIfNeeded()
+    {
+        if (!_beatCacheDirty && _beatCacheDifficulty == selectedDifficulty) return;
+        _beatCacheDirty = false;
+        _beatCacheDifficulty = selectedDifficulty;
+        _cachedStrongBeats.Clear();
+        _cachedWeakBeats.Clear();
+
+        // Extract BPM change points
+        var bpmChanges = new List<(double Time, float Bpm, int Numerator, int Denominator)>();
+        float lastBpm = -1f;
+        int lastNum = -1;
+        int lastDen = -1;
+
+        foreach (var timing in SimaiProcess.timingLists[selectedDifficulty] ?? new())
+        {
+            if (timing == null) continue;
+            if (timing.Bpm != lastBpm || timing.SignatureNumerator != lastNum || timing.SignatureDenominator != lastDen)
+            {
+                bpmChanges.Add((timing.Timing, timing.Bpm, timing.SignatureNumerator, timing.SignatureDenominator));
+                lastBpm = timing.Bpm;
+                lastNum = timing.SignatureNumerator;
+                lastDen = timing.SignatureDenominator;
+            }
+        }
+
+        double audioEndTime = Bass.BASS_ChannelBytes2Seconds(bgmStream, Bass.BASS_ChannelGetLength(bgmStream));
+        bpmChanges.Add((audioEndTime, lastBpm, lastNum, lastDen));
+
+        double time = SimaiProcess.simaiFile.Offset;
+        int currentBeat = 1;
+
+        for (var i = 0; i < bpmChanges.Count - 1; i++)
+        {
+            var (Time, Bpm, Numerator, Denominator) = bpmChanges[i];
+            var nextSegTime = bpmChanges[i + 1].Time;
+
+            while (time < nextSegTime - 0.05)
+            {
+                if (currentBeat > Numerator) currentBeat = 1;
+                double timePerBeat = (60d / Bpm) * (4.0 / Denominator);
+
+                if (currentBeat == 1)
+                    _cachedStrongBeats.Add(time);
+                else
+                    _cachedWeakBeats.Add(time);
+
+                currentBeat++;
+                time += timePerBeat;
+            }
+
+            time = nextSegTime;
+            currentBeat = 1;
+        }
+    }
+
+    protected void TryLoadBassOpusPlugin()
+    {
+        if (bassOpusPluginLoaded) return;
+        var pluginPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, BassOpusPluginFileName);
+        if (!File.Exists(pluginPath)) return;
+        bassOpusPluginHandle = Bass.BASS_PluginLoad(pluginPath);
+        bassOpusPluginLoaded = bassOpusPluginHandle != 0;
+    }
+
+    protected bool ShowOpusPluginHint(string audioPath)
+    {
+        if (bassOpusPluginLoaded) return false;
+        if (!".ogg".Equals(Path.GetExtension(audioPath), StringComparison.OrdinalIgnoreCase)) return false;
+        MessageBox.Show(GetLocalizedString("OpusPluginMissing"), GetLocalizedString("Error"));
+        return true;
     }
 
     // 获取本机局域网IP

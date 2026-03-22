@@ -668,4 +668,7 @@ Open Browser to download latest update of Majdata?</value>
   <data name="JudgeDisplayBoth" xml:space="preserve">
     <value>Both</value>
   </data>
+  <data name="OpusPluginMissing" xml:space="preserve">
+    <value>Opus再生にはbass_opusプラグインが必要です。https://www.un4seen.com/bass.html からダウンロードして実行ファイルの横に置いてください。</value>
+  </data>
 </root>

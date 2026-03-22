@@ -41,9 +41,10 @@ public partial class MainWindow : Window
         Op_Button.IsEnabled = false;
         isPlaying = true;
         isPlan2Stop = false;
-        PlayAndPauseButton.Content = "  ▌▌ ";
+        PlayAndPauseButton.Content = " ▌▌ ";
 
         await SimaiProcess.Serialize(GetRawFumenText());
+        InvalidateBeatCache();
 
         //TODO: Moeying改一下你的generateSoundEffect然后把下面这行删了
         var isOpIncluded = playMethod == PlayMethod.Normal ? false : true;

@@ -640,4 +640,7 @@ Click OK to start render.</value>
   <data name="JudgeDisplayBoth" xml:space="preserve">
     <value>Both</value>
   </data>
+  <data name="OpusPluginMissing" xml:space="preserve">
+    <value>Opus playback requires the bass_opus plugin. Download it from https://www.un4seen.com/bass.html and place it beside the executable before loading Opus tracks.</value>
+  </data>
 </root>
