@@ -572,6 +572,7 @@ public partial class MainWindow : Window
 
         var handle = new WindowInteropHelper(this).Handle;
         Bass.BASS_Init(-1, 44100, BASSInit.BASS_DEVICE_CPSPEAKERS, handle);
+        TryLoadBassOpusPlugin();
         init_wave();
 
         ReadSoundEffect();
