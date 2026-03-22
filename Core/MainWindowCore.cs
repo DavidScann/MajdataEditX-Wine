@@ -74,7 +74,6 @@ public partial class MainWindow : Window
     // UI Draw
     private readonly Timer visualEffectRefreshTimer = new(16); // ~60fps, was 1ms
     private WriteableBitmap? WaveBitmap;
-    private WriteableBitmap? FFTBitmap; // cached FFT bitmap
 
     // Cached GDI+ drawing objects (reused across frames to reduce GC pressure)
     private Pen? _cachedWavePen;
@@ -94,11 +93,6 @@ public partial class MainWindow : Window
     private bool _beatCacheDirty = true;
     private int _beatCacheDifficulty = -1;
     private int _fftFrameCounter = 0; // used to skip FFT frames during playback
-
-    // SE loop UI dispatch throttling (avoid flooding dispatcher queue)
-    private volatile float _pendingSeekTime = float.MinValue;
-    private volatile bool _seekDispatchPending = false;
-    private long _lastSeekDispatchTick = 0;
 
     // Error Handle
     private static ErrorList errorListWindow = new();

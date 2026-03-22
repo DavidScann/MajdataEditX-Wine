@@ -56,7 +56,6 @@ public partial class MainWindow : Window
         }
 
         // ready for play
-        MenuBar.IsEnabled = true;
         Op_Button.IsEnabled = true;
         PlayAndPauseButton.Content = "▶";
 
@@ -169,77 +168,13 @@ public partial class MainWindow : Window
         }
     }
 
-    void set_err_count<T>(T eCount) => Dispatcher.InvokeAsync(() => ErrCount.Content = $"{eCount}");
+    void set_err_count<T>(T eCount) => Dispatcher.Invoke(() => ErrCount.Content = $"{eCount}");
 
 
     // wave draw
     bool isDrawing;
     bool isDrawingFFT;
     private float deltatime = 4f;
-    private readonly PointF[] _fftPoints = new PointF[1024]; // pre-allocated FFT points array
-    private readonly float[] _fftBuffer = new float[1024]; // pre-allocated FFT data buffer
-
-    private void InvalidateBeatCache()
-    {
-        _beatCacheDirty = true;
-    }
-
-    private void RebuildBeatCacheIfNeeded()
-    {
-        if (!_beatCacheDirty && _beatCacheDifficulty == selectedDifficulty) return;
-        _beatCacheDirty = false;
-        _beatCacheDifficulty = selectedDifficulty;
-        _cachedStrongBeats.Clear();
-        _cachedWeakBeats.Clear();
-
-        // Extract BPM change points
-        var bpmChanges = new List<(double Time, float Bpm, int Numerator, int Denominator)>();
-        float lastBpm = -1f;
-        int lastNum = -1;
-        int lastDen = -1;
-
-        foreach (var timing in SimaiProcess.timingLists[selectedDifficulty] ?? new())
-        {
-            if (timing == null) continue;
-            if (timing.Bpm != lastBpm || timing.SignatureNumerator != lastNum || timing.SignatureDenominator != lastDen)
-            {
-                bpmChanges.Add((timing.Timing, timing.Bpm, timing.SignatureNumerator, timing.SignatureDenominator));
-                lastBpm = timing.Bpm;
-                lastNum = timing.SignatureNumerator;
-                lastDen = timing.SignatureDenominator;
-            }
-        }
-
-        double audioEndTime = Bass.BASS_ChannelBytes2Seconds(bgmStream, Bass.BASS_ChannelGetLength(bgmStream));
-        bpmChanges.Add((audioEndTime, lastBpm, lastNum, lastDen));
-
-        double time = SimaiProcess.simaiFile.Offset;
-        int currentBeat = 1;
-
-        for (var i = 0; i < bpmChanges.Count - 1; i++)
-        {
-            var (Time, Bpm, Numerator, Denominator) = bpmChanges[i];
-            var nextSegTime = bpmChanges[i + 1].Time;
-
-            while (time < nextSegTime - 0.05)
-            {
-                if (currentBeat > Numerator) currentBeat = 1;
-                double timePerBeat = (60d / Bpm) * (4.0 / Denominator);
-
-                if (currentBeat == 1)
-                    _cachedStrongBeats.Add(time);
-                else
-                    _cachedWeakBeats.Add(time);
-
-                currentBeat++;
-                time += timePerBeat;
-            }
-
-            time = nextSegTime;
-            currentBeat = 1;
-        }
-    }
-
     private void draw_fft()
     {
         // During playback, only draw FFT every 4th frame (~7.5fps) to save CPU
@@ -259,27 +194,24 @@ public partial class MainWindow : Window
             //MusicWave.Margin = new Thickness(-currentTime / sampleTime * zoominPower, Margin.Left, MusicWave.Margin.Right, Margin.Bottom);
             //MusicWaveCusor.Margin = new Thickness(-currentTime / sampleTime * zoominPower, Margin.Left, MusicWave.Margin.Right, Margin.Bottom);
 
-                FFTBitmap.Lock();
-                var backBitmap = new Bitmap(255, 255, FFTBitmap.BackBufferStride,
-                    PixelFormat.Format32bppArgb, FFTBitmap.BackBuffer);
+            var writableBitmap = new WriteableBitmap(255, 255, 72, 72, PixelFormats.Pbgra32, null);
+            FFTImage.Source = writableBitmap;
+            writableBitmap.Lock();
+            var backBitmap = new Bitmap(255, 255, writableBitmap.BackBufferStride,
+                PixelFormat.Format32bppArgb, writableBitmap.BackBuffer);
 
-                var graphics = Graphics.FromImage(backBitmap);
-                graphics.SmoothingMode = SmoothingMode.None;
-                graphics.Clear(Color.Transparent);
+            var graphics = Graphics.FromImage(backBitmap);
+            graphics.Clear(Color.Transparent);
 
-                Bass.BASS_ChannelGetData(bgmStream, _fftBuffer, (int)BASSData.BASS_DATA_FFT1024);
-                for (var i = 0; i < _fftBuffer.Length; i++)
-                {
-                    _fftPoints[i].X = (float)Math.Log10(i + 1) * 100f;
-                    _fftPoints[i].Y = 240 - _fftBuffer[i] * 256;
-                }
+            var fft = new float[1024];
+            Bass.BASS_ChannelGetData(bgmStream, fft, (int)BASSData.BASS_DATA_FFT1024);
+            var points = new PointF[1024];
+            for (var i = 0; i < fft.Length; i++)
+                points[i] = new PointF((float)Math.Log10(i + 1) * 100f, 240 - fft[i] * 256); //semilog
 
             _cachedFFTPen ??= new Pen(Color.LightSkyBlue, 1);
             graphics.DrawCurve(_cachedFFTPen, points);
 
-                graphics.Flush();
-                graphics.Dispose();
-                backBitmap.Dispose();
 
             //no please
             /*
@@ -311,7 +243,7 @@ public partial class MainWindow : Window
         if (isDrawing) return;
         if (WaveBitmap == null) return;
 
-        Dispatcher.InvokeAsync(() =>
+        Dispatcher.Invoke(() =>
         {
             isDrawing = true;
             var width = WaveBitmap.PixelWidth;
@@ -329,7 +261,6 @@ public partial class MainWindow : Window
             var backBitmap = new Bitmap(width, height, WaveBitmap.BackBufferStride,
                 PixelFormat.Format32bppArgb, WaveBitmap.BackBuffer);
             var graphics = Graphics.FromImage(backBitmap);
-            graphics.SmoothingMode = SmoothingMode.None; // faster rendering
             var currentTime = Bass.BASS_ChannelBytes2Seconds(bgmStream, Bass.BASS_ChannelGetPosition(bgmStream));
 
             graphics.Clear(Color.FromArgb(100, 0, 0, 0));
@@ -413,8 +344,6 @@ public partial class MainWindow : Window
             var isEach = notes.Count(o => !o.IsSlideNoHead && !o.IsMine) > 1;
 
                 var x = ((float)(note.Timing / step) - startindex) * linewidth;
-                _cachedNotePen ??= new Pen(Color.White, 1);
-                _cachedStarFont ??= new Font("Consolas", 12, System.Drawing.FontStyle.Bold);
 
             foreach (var noteD in notes)
             {
@@ -580,7 +509,7 @@ public partial class MainWindow : Window
     {
         var minute = (int)time / 60;
         double second = (int)(time - 60 * minute);
-        Dispatcher.InvokeAsync(() => { TimeLabel.Content = string.Format("{0}:{1:00}", minute, second); });
+        Dispatcher.Invoke(() => { TimeLabel.Content = string.Format("{0}:{1:00}", minute, second); });
     }
 
     public void toggle_find()
@@ -666,7 +595,7 @@ public partial class MainWindow : Window
         if (!SafeTerminationDetector.Of().IsLastTerminationSafe())
         {
             // 若上次异常退出，则询问打开恢复窗口
-            var result = MessageBox.Show(this, GetLocalizedString("AbnormalTerminationInformation"),
+            var result = MessageBox.Show(GetLocalizedString("AbnormalTerminationInformation"),
                 GetLocalizedString("Attention"), MessageBoxButton.YesNo);
             if (result == MessageBoxResult.Yes)
             {
@@ -751,7 +680,7 @@ public partial class MainWindow : Window
         var process = Process.GetProcessesByName("MajdataView");
         if (process.Length > 0)
         {
-            var result = MessageBox.Show(this, GetLocalizedString("AskCloseView"), GetLocalizedString("Attention"),
+            var result = MessageBox.Show(GetLocalizedString("AskCloseView"), GetLocalizedString("Attention"),
                 MessageBoxButton.YesNo);
             if (result == MessageBoxResult.Yes)
                 process[0].Kill();
@@ -819,7 +748,7 @@ public partial class MainWindow : Window
         {
             Filter = "track.mp3, track.ogg|track.mp3;track.ogg"
         };
-        if (openFileDialog.ShowDialog(this) == true)
+        if ((bool)openFileDialog.ShowDialog()!)
         {
             var fileInfo = new FileInfo(openFileDialog.FileName);
             CreateNewFumen(fileInfo.DirectoryName!);
@@ -834,7 +763,7 @@ public partial class MainWindow : Window
         {
             Filter = "maidata.txt|maidata.txt"
         };
-        if (openFileDialog.ShowDialog(this) == true)
+        if ((bool)openFileDialog.ShowDialog()!)
         {
             var fileInfo = new FileInfo(openFileDialog.FileName);
             await InitFromFile(fileInfo.DirectoryName!);
@@ -860,9 +789,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this,
-                string.Format(GetLocalizedString("ToggleShareFail"), ex.Message + ex.InnerException?.Message),
-                GetLocalizedString("Error"));
+            MessageBox.Show(string.Format(GetLocalizedString("ToggleShareFail"), ex.Message + ex.InnerException?.Message), GetLocalizedString("Error"));
             _client = null;
             return;
         }
@@ -934,10 +861,7 @@ public partial class MainWindow : Window
 
     private void MenuItem_InfomationEdit_Click(object? sender, RoutedEventArgs e)
     {
-        var infoWindow = new Infomation
-        {
-            Owner = this
-        };
+        var infoWindow = new Infomation();
         SetSavedState(false);
         infoWindow.ShowDialog();
         TheWindow.Title = GetWindowsTitleString(SimaiProcess.simaiFile.Title);
@@ -1350,32 +1274,5 @@ public partial class MainWindow : Window
             6 => 2f,
             _ => 1f
         };
-    }
-
-    private void MenuBar_SubmenuOpened(object sender, RoutedEventArgs e)
-    {
-        Console.WriteLine($"[WINE-DEBUG] SubmenuOpened: {e.Source}");
-    }
-
-    private void MenuBar_SubmenuClosed(object sender, RoutedEventArgs e)
-    {
-        Console.WriteLine($"[WINE-DEBUG] SubmenuClosed: {e.Source}");
-    }
-
-    private void MenuBar_IsKeyboardFocusWithinChanged(object sender, DependencyPropertyChangedEventArgs e)
-    {
-        Console.WriteLine($"[WINE-DEBUG] MenuBar FocusWithin: {e.NewValue}");
-    }
-
-    protected override void OnActivated(EventArgs e)
-    {
-        base.OnActivated(e);
-        Console.WriteLine("[WINE-DEBUG] Window Activated");
-    }
-
-    protected override void OnPreviewGotKeyboardFocus(KeyboardFocusChangedEventArgs e)
-    {
-        base.OnPreviewGotKeyboardFocus(e);
-        Console.WriteLine($"[WINE-DEBUG] Focus shift to: {e.NewValue}");
     }
 }
