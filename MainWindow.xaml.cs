@@ -168,7 +168,8 @@ public partial class MainWindow : Window
         }
     }
 
-    void set_err_count<T>(T eCount) => Dispatcher.Invoke(() => ErrCount.Content = $"{eCount}");
+    void set_err_count<T>(T eCount) => ErrCount.Content = $"{eCount}";
+    private bool _errCountDirty = false;
 
 
     // wave draw
@@ -189,43 +190,36 @@ public partial class MainWindow : Window
             if (isDrawingFFT) return;
             isDrawingFFT = true;
 
-            //Scroll WaveView
-            var currentTime = Bass.BASS_ChannelBytes2Seconds(bgmStream, Bass.BASS_ChannelGetPosition(bgmStream));
-            //MusicWave.Margin = new Thickness(-currentTime / sampleTime * zoominPower, Margin.Left, MusicWave.Margin.Right, Margin.Bottom);
-            //MusicWaveCusor.Margin = new Thickness(-currentTime / sampleTime * zoominPower, Margin.Left, MusicWave.Margin.Right, Margin.Bottom);
+            // Lazily create & cache the FFT bitmap
+            if (_cachedFFTWritableBitmap == null)
+            {
+                _cachedFFTWritableBitmap = new WriteableBitmap(255, 255, 72, 72, PixelFormats.Pbgra32, null);
+                FFTImage.Source = _cachedFFTWritableBitmap;
+            }
 
-            var writableBitmap = new WriteableBitmap(255, 255, 72, 72, PixelFormats.Pbgra32, null);
-            FFTImage.Source = writableBitmap;
-            writableBitmap.Lock();
-            var backBitmap = new Bitmap(255, 255, writableBitmap.BackBufferStride,
-                PixelFormat.Format32bppArgb, writableBitmap.BackBuffer);
+            _cachedFFTWritableBitmap.Lock();
+            if (_cachedFFTBitmap == null || _cachedFFTBitmap.Width != 255 || _cachedFFTBitmap.Height != 255)
+            {
+                _cachedFFTBitmap?.Dispose();
+                _cachedFFTGraphics?.Dispose();
+                _cachedFFTBitmap = new Bitmap(255, 255, _cachedFFTWritableBitmap.BackBufferStride,
+                    PixelFormat.Format32bppArgb, _cachedFFTWritableBitmap.BackBuffer);
+                _cachedFFTGraphics = Graphics.FromImage(_cachedFFTBitmap);
+            }
 
-            var graphics = Graphics.FromImage(backBitmap);
-            graphics.Clear(Color.Transparent);
+            _cachedFFTGraphics!.Clear(Color.Transparent);
 
-            var fft = new float[1024];
-            Bass.BASS_ChannelGetData(bgmStream, fft, (int)BASSData.BASS_DATA_FFT1024);
-            var points = new PointF[1024];
-            for (var i = 0; i < fft.Length; i++)
-                points[i] = new PointF((float)Math.Log10(i + 1) * 100f, 240 - fft[i] * 256); //semilog
+            Bass.BASS_ChannelGetData(bgmStream, _fftBuffer, (int)BASSData.BASS_DATA_FFT1024);
+            for (var i = 0; i < _fftBuffer.Length; i++)
+                _fftPoints[i] = new PointF((float)Math.Log10(i + 1) * 100f, 240 - _fftBuffer[i] * 256); // semilog
 
             _cachedFFTPen ??= new Pen(Color.LightSkyBlue, 1);
-            graphics.DrawCurve(_cachedFFTPen, points);
+            _cachedFFTGraphics.DrawCurve(_cachedFFTPen, _fftPoints);
 
+            _cachedFFTGraphics.Flush();
 
-            //no please
-            /*
-            var isSuccess = new Visuals().CreateSpectrumWave(bgmStream, graphics, new System.Drawing.Rectangle(0, 0, 255, 255),
-                System.Drawing.Color.White, System.Drawing.Color.Red, System.Drawing.Color.Black, 1,
-                false, false, false);
-            Console.WriteLine(isSuccess);
-            */
-            graphics.Flush();
-            graphics.Dispose();
-            backBitmap.Dispose();
-
-            writableBitmap.AddDirtyRect(new Int32Rect(0, 0, 255, 255));
-            writableBitmap.Unlock();
+            _cachedFFTWritableBitmap.AddDirtyRect(new Int32Rect(0, 0, 255, 255));
+            _cachedFFTWritableBitmap.Unlock();
             isDrawingFFT = false;
         });
     }
@@ -243,8 +237,9 @@ public partial class MainWindow : Window
         if (isDrawing) return;
         if (WaveBitmap == null) return;
 
-        Dispatcher.Invoke(() =>
+        Dispatcher.InvokeAsync(() =>
         {
+            if (isDrawing) return;
             isDrawing = true;
             var width = WaveBitmap.PixelWidth;
             var height = WaveBitmap.PixelHeight;
@@ -257,10 +252,19 @@ public partial class MainWindow : Window
 
             WaveBitmap.Lock();
 
-            //the process starts
-            var backBitmap = new Bitmap(width, height, WaveBitmap.BackBufferStride,
-                PixelFormat.Format32bppArgb, WaveBitmap.BackBuffer);
-            var graphics = Graphics.FromImage(backBitmap);
+            // Reuse cached Bitmap and Graphics when dimensions match
+            if (_cachedWaveBitmap == null || width != _lastWaveBitmapWidth || height != _lastWaveBitmapHeight)
+            {
+                _cachedWaveBitmap?.Dispose();
+                _cachedWaveGraphics?.Dispose();
+                _cachedWaveBitmap = new Bitmap(width, height, WaveBitmap.BackBufferStride,
+                    PixelFormat.Format32bppArgb, WaveBitmap.BackBuffer);
+                _cachedWaveGraphics = Graphics.FromImage(_cachedWaveBitmap);
+                _lastWaveBitmapWidth = width;
+                _lastWaveBitmapHeight = height;
+            }
+
+            var graphics = _cachedWaveGraphics!;
             var currentTime = Bass.BASS_ChannelBytes2Seconds(bgmStream, Bass.BASS_ChannelGetPosition(bgmStream));
 
             graphics.Clear(Color.FromArgb(100, 0, 0, 0));
@@ -270,235 +274,258 @@ public partial class MainWindow : Window
             if (resample > 3) resample = 2;
             var waveLevels = waveRaws[resample];
 
-        var step = songLength / waveLevels.Length;
-        var startindex = (int)((currentTime - deltatime) / step);
-        var stopindex = (int)((currentTime + deltatime) / step);
-        var linewidth = backBitmap.Width / (float)(stopindex - startindex);
+            var step = songLength / waveLevels.Length;
+            var startindex = (int)((currentTime - deltatime) / step);
+            var stopindex = (int)((currentTime + deltatime) / step);
+            if (stopindex == startindex) { stopindex = startindex + 1; }
+            var linewidth = width / (float)(stopindex - startindex);
 
-        // Use cached wave pen
-        _cachedWavePen ??= new Pen(Color.Green, linewidth);
-        _cachedWavePen.Width = linewidth;
+            // Use cached wave pen
+            _cachedWavePen ??= new Pen(Color.Green, linewidth);
+            _cachedWavePen.Width = linewidth;
 
-        _reusablePointList.Clear();
-        for (var i = startindex; i < stopindex; i = i + 1)
-        {
-            if (i < 0) i = 0;
-            if (i >= waveLevels.Length - 1) break;
+            _reusablePointList.Clear();
+            for (var i = startindex; i < stopindex; i = i + 1)
+            {
+                if (i < 0) i = 0;
+                if (i >= waveLevels.Length - 1) break;
 
-            var x = (i - startindex) * linewidth;
-            var y = waveLevels[i] / 65535f * height + height / 2;
+                var x = (i - startindex) * linewidth;
+                var y = waveLevels[i] / 65535f * height + height / 2;
 
-            _reusablePointList.Add(new PointF(x, y));
-        }
+                _reusablePointList.Add(new PointF(x, y));
+            }
 
-        if (_reusablePointList.Count > 1)
-            graphics.DrawLines(_cachedWavePen, _reusablePointList.ToArray());
+            // Use pre-allocated array instead of ToArray() to avoid per-frame allocation
+            if (_reusablePointList.Count > 1)
+            {
+                if (_reusablePointList.Count > _reusablePointArray.Length)
+                    _reusablePointArray = new PointF[_reusablePointList.Count];
+                _reusablePointList.CopyTo(_reusablePointArray);
+                graphics.DrawLines(_cachedWavePen, _reusablePointArray[.._reusablePointList.Count]);
+            }
 
-        // Use cached beat positions (recalculated only when chart changes)
-        RebuildBeatCacheIfNeeded();
-        var strongBeat = _cachedStrongBeats;
-        var weakBeat = _cachedWeakBeats;
+            // Use cached beat positions (recalculated only when chart changes)
+            RebuildBeatCacheIfNeeded();
+            var strongBeat = _cachedStrongBeats;
+            var weakBeat = _cachedWeakBeats;
 
-        var viewStart = currentTime - deltatime;
-        var viewEnd = currentTime + deltatime;
+            var viewStart = currentTime - deltatime;
+            var viewEnd = currentTime + deltatime;
 
-        // Draw strong beat (use early exit since list is sorted)
-        _cachedBeatPenStrong ??= new Pen(Color.Yellow, 1);
-        foreach (var btime in strongBeat)
-        {
-            if (btime < viewStart) continue;
-            if (btime > viewEnd) break;
-            var x = ((float)(btime / step) - startindex) * linewidth;
-            graphics.DrawLine(_cachedBeatPenStrong, x, 0, x, 75);
-        }
+            // Draw strong beat (use early exit since list is sorted)
+            _cachedBeatPenStrong ??= new Pen(Color.Yellow, 1);
+            foreach (var btime in strongBeat)
+            {
+                if (btime < viewStart) continue;
+                if (btime > viewEnd) break;
+                var x = ((float)(btime / step) - startindex) * linewidth;
+                graphics.DrawLine(_cachedBeatPenStrong, x, 0, x, 75);
+            }
 
-        // Draw weak beat
-        foreach (var btime in weakBeat)
-        {
-            if (btime < viewStart) continue;
-            if (btime > viewEnd) break;
-            var x = ((float)(btime / step) - startindex) * linewidth;
-            graphics.DrawLine(_cachedBeatPenStrong, x, 0, x, 15);
-        }
+            // Draw weak beat
+            foreach (var btime in weakBeat)
+            {
+                if (btime < viewStart) continue;
+                if (btime > viewEnd) break;
+                var x = ((float)(btime / step) - startindex) * linewidth;
+                graphics.DrawLine(_cachedBeatPenStrong, x, 0, x, 15);
+            }
 
-        // Draw timing lines (with early skip and early exit for sorted list)
-        _cachedTimingPen ??= new Pen(Color.White, 1);
-        foreach (var note in SimaiProcess.timingLists[selectedDifficulty] ?? new())
-        {
-            if (note == null) break;
-            if (note.Timing < viewStart) continue;
-            if (note.Timing > viewEnd) break;
-            var x = ((float)(note.Timing / step) - startindex) * linewidth;
-            graphics.DrawLine(_cachedTimingPen, x, 60, x, 75);
-        }
+            // Draw timing lines (with early skip and early exit for sorted list)
+            _cachedTimingPen ??= new Pen(Color.White, 1);
+            foreach (var note in SimaiProcess.timingLists[selectedDifficulty] ?? new())
+            {
+                if (note == null) break;
+                if (note.Timing < viewStart) continue;
+                if (note.Timing > viewEnd) break;
+                var x = ((float)(note.Timing / step) - startindex) * linewidth;
+                graphics.DrawLine(_cachedTimingPen, x, 60, x, 75);
+            }
 
-        //Draw notes (with early skip and early exit for sorted list)
-        foreach (var note in SimaiProcess.noteLists[selectedDifficulty] ?? new())
-        {
-            if (note == null) break;
-            // Skip notes too far in the past (allow extra margin for holds/slides that extend)
-            if (note.Timing < viewStart - 30) continue;
-            // Stop iterating once past the visible window (list is sorted by time)
-            if (note.Timing > viewEnd) break;
-            var notes = note.Notes;
-            var isEach = notes.Count(o => !o.IsSlideNoHead && !o.IsMine) > 1;
+            // Cache star font and brush outside the loop
+            _cachedStarFont ??= new Font("Consolas", 12, System.Drawing.FontStyle.Bold);
+            _cachedStarBrush ??= new SolidBrush(Color.White);
+
+            //Draw notes (with early skip and early exit for sorted list)
+            foreach (var note in SimaiProcess.noteLists[selectedDifficulty] ?? new())
+            {
+                if (note == null) break;
+                // Skip notes too far in the past (allow extra margin for holds/slides that extend)
+                if (note.Timing < viewStart - 30) continue;
+                // Stop iterating once past the visible window (list is sorted by time)
+                if (note.Timing > viewEnd) break;
+                var notes = note.Notes;
+                // Compute counts ONCE per note group instead of per-note (eliminates O(n^2) in group)
+                var isEach = false;
+                var slideCount = 0;
+                foreach (var n in notes)
+                {
+                    if (!n.IsSlideNoHead && !n.IsMine) isEach = true;
+                    if (n.Type == SimaiNoteType.Slide && !n.IsMineSlide) slideCount++;
+                }
 
                 var x = ((float)(note.Timing / step) - startindex) * linewidth;
 
-            foreach (var noteD in notes)
-            {
-                var y = noteD.StartPosition * 6.875f + 8f; //与键位有关
-
-                if (noteD.IsHanabi)
+                foreach (var noteD in notes)
                 {
-                    var xDeltaHanabi = (float)(1f / step) * linewidth; //Hanabi is 1s due to frame analyze
-                    var rectangleF = new RectangleF(x, 0, xDeltaHanabi, 75);
-                    if (noteD.Type == SimaiNoteType.TouchHold)
-                        rectangleF.X += (float)(noteD.HoldTime / step) * linewidth;
-                    var gradientBrush = new LinearGradientBrush(
-                        rectangleF,
-                        Color.FromArgb(100, 255, 0, 0),
-                        Color.FromArgb(0, 255, 0, 0),
-                        LinearGradientMode.Horizontal
-                    );
-                    graphics.FillRectangle(gradientBrush, rectangleF);
-                }
+                    var y = noteD.StartPosition * 6.875f + 8f; //与键位有关
 
-                if (noteD.Type == SimaiNoteType.Tap)
-                {
-                    _cachedNotePen ??= new Pen(Color.LightPink, 2);
-                    if (noteD.IsForceStar)
+                    if (noteD.IsHanabi)
                     {
-                        _cachedNotePen.Width = 3;
-                        if (noteD.IsBreak) _cachedNotePen.Color = Color.OrangeRed;
-                        else if (isEach) _cachedNotePen.Color = Color.Gold;
-                        else if (noteD.IsMine) _cachedNotePen.Color = Color.LightGray;
-                        else _cachedNotePen.Color = Color.DeepSkyBlue;
-                        _cachedStarFont ??= new Font("Consolas", 12, System.Drawing.FontStyle.Bold);
-                        Brush brush = new SolidBrush(_cachedNotePen.Color);
-                        graphics.DrawString("*", _cachedStarFont, brush, new PointF(x - 7f, y - 7f));
+                        var xDeltaHanabi = (float)(1f / step) * linewidth; //Hanabi is 1s due to frame analyze
+                        var rectX = x;
+                        if (noteD.Type == SimaiNoteType.TouchHold)
+                            rectX += (float)(noteD.HoldTime / step) * linewidth;
+                        var hanabiRect = new RectangleF(rectX, 0, xDeltaHanabi, 75);
+                        // Reuse cached gradient brush (must recreate since Rectangle is read-only)
+                        _cachedHanabiBrush?.Dispose();
+                        _cachedHanabiBrush = new LinearGradientBrush(
+                            hanabiRect,
+                            Color.FromArgb(100, 255, 0, 0),
+                            Color.FromArgb(0, 255, 0, 0),
+                            LinearGradientMode.Horizontal);
+                        graphics.FillRectangle(_cachedHanabiBrush, hanabiRect);
                     }
-                    else
+
+                    if (noteD.Type == SimaiNoteType.Tap)
                     {
+                        _cachedNotePen ??= new Pen(Color.LightPink, 2);
+                        if (noteD.IsForceStar)
+                        {
+                            _cachedNotePen.Width = 3;
+                            if (noteD.IsBreak) _cachedNotePen.Color = Color.OrangeRed;
+                            else if (isEach) _cachedNotePen.Color = Color.Gold;
+                            else if (noteD.IsMine) _cachedNotePen.Color = Color.LightGray;
+                            else _cachedNotePen.Color = Color.DeepSkyBlue;
+                            _cachedStarBrush!.Color = _cachedNotePen.Color;
+                            graphics.DrawString("*", _cachedStarFont, _cachedStarBrush, new PointF(x - 7f, y - 7f));
+                        }
+                        else
+                        {
+                            _cachedNotePen.Width = 2;
+                            if (noteD.IsBreak) _cachedNotePen.Color = Color.OrangeRed;
+                            else if (isEach) _cachedNotePen.Color = Color.Gold;
+                            else if (noteD.IsMine) _cachedNotePen.Color = Color.LightGray;
+                            else _cachedNotePen.Color = Color.LightPink;
+                            graphics.DrawEllipse(_cachedNotePen, x - 2.5f, y - 2.5f, 5, 5);
+                        }
+                    }
+
+                    if (noteD.Type == SimaiNoteType.Touch)
+                    {
+                        _cachedNotePen ??= new Pen(Color.DeepSkyBlue, 2);
                         _cachedNotePen.Width = 2;
                         if (noteD.IsBreak) _cachedNotePen.Color = Color.OrangeRed;
                         else if (isEach) _cachedNotePen.Color = Color.Gold;
                         else if (noteD.IsMine) _cachedNotePen.Color = Color.LightGray;
-                        else _cachedNotePen.Color = Color.LightPink;
-                        graphics.DrawEllipse(_cachedNotePen, x - 2.5f, y - 2.5f, 5, 5);
+                        else _cachedNotePen.Color = Color.DeepSkyBlue;
+                        graphics.DrawRectangle(_cachedNotePen, x - 2.5f, y - 2.5f, 5, 5);
                     }
-                }
 
-                if (noteD.Type == SimaiNoteType.Touch)
-                {
-                    _cachedNotePen ??= new Pen(Color.DeepSkyBlue, 2);
-                    _cachedNotePen.Width = 2;
-                    if (noteD.IsBreak) _cachedNotePen.Color = Color.OrangeRed;
-                    else if (isEach) _cachedNotePen.Color = Color.Gold;
-                    else if (noteD.IsMine) _cachedNotePen.Color = Color.LightGray;
-                    else _cachedNotePen.Color = Color.DeepSkyBlue;
-                    graphics.DrawRectangle(_cachedNotePen, x - 2.5f, y - 2.5f, 5, 5);
-                }
-
-                if (noteD.Type == SimaiNoteType.Hold)
-                {
-                    _cachedNotePen ??= new Pen(Color.LightPink, 3);
-                    _cachedNotePen.Width = 3;
-                    if (noteD.IsBreak) _cachedNotePen.Color = Color.OrangeRed;
-                    else if (isEach) _cachedNotePen.Color = Color.Gold;
-                    else if (noteD.IsMine) _cachedNotePen.Color = Color.LightGray;
-                    else _cachedNotePen.Color = Color.LightPink;
-
-                    var xRight = x + (float)(noteD.HoldTime / step) * linewidth;
-
-                    //1h[0:1]
-                    if (!float.IsNormal(xRight) || xRight > ushort.MaxValue) xRight = ushort.MaxValue;
-                    if (xRight - x < 1f) xRight = x + 5;
-                    graphics.DrawLine(_cachedNotePen, x, y, xRight, y);
-                }
-
-                if (noteD.Type == SimaiNoteType.TouchHold)
-                {
-                    _cachedNotePen ??= new Pen(Color.FromArgb(200, 255, 75, 0), 3);
-                    _cachedNotePen.Width = 3;
-                    var xDelta = (float)(noteD.HoldTime / step) * linewidth / 4f;
-                    //Console.WriteLine("HoldPixel"+ xDelta);
-
-                    _cachedNotePen.Color = Color.FromArgb(200, 255, 75, 0);
-                    if (noteD.IsMine) _cachedNotePen.Color = Color.LightGray;
-                    graphics.DrawLine(_cachedNotePen, x, y, x + xDelta * 4f, y);
-                    _cachedNotePen.Color = Color.FromArgb(200, 255, 241, 0);
-                    graphics.DrawLine(_cachedNotePen, x, y, x + xDelta * 3f, y);
-                    _cachedNotePen.Color = Color.FromArgb(200, 2, 165, 89);
-                    if (noteD.IsMine) _cachedNotePen.Color = Color.Gray;
-                    graphics.DrawLine(_cachedNotePen, x, y, x + xDelta * 2f, y);
-                    _cachedNotePen.Color = Color.FromArgb(200, 0, 140, 254);
-                    graphics.DrawLine(_cachedNotePen, x, y, x + xDelta, y);
-                }
-
-                if (noteD.Type == SimaiNoteType.Slide)
-                {
-                    _cachedNotePen ??= new Pen(Color.SkyBlue, 3);
-                    _cachedNotePen.Width = 3;
-                    if (!noteD.IsSlideNoHead)
+                    if (noteD.Type == SimaiNoteType.Hold)
                     {
+                        _cachedNotePen ??= new Pen(Color.LightPink, 3);
+                        _cachedNotePen.Width = 3;
                         if (noteD.IsBreak) _cachedNotePen.Color = Color.OrangeRed;
                         else if (isEach) _cachedNotePen.Color = Color.Gold;
                         else if (noteD.IsMine) _cachedNotePen.Color = Color.LightGray;
-                        else _cachedNotePen.Color = Color.DeepSkyBlue;
-                        _cachedStarFont ??= new Font("Consolas", 12, System.Drawing.FontStyle.Bold);
-                        Brush brush = new SolidBrush(_cachedNotePen.Color);
-                        graphics.DrawString("*", _cachedStarFont, brush, new PointF(x - 7f, y - 7f));
+                        else _cachedNotePen.Color = Color.LightPink;
+
+                        var xRight = x + (float)(noteD.HoldTime / step) * linewidth;
+
+                        //1h[0:1]
+                        if (!float.IsNormal(xRight) || xRight > ushort.MaxValue) xRight = ushort.MaxValue;
+                        if (xRight - x < 1f) xRight = x + 5;
+                        graphics.DrawLine(_cachedNotePen, x, y, xRight, y);
                     }
 
-                    if (noteD.IsSlideBreak)
-                        _cachedNotePen.Color = Color.OrangeRed;
-                    else if (notes.Count(o => o.Type == SimaiNoteType.Slide && !o.IsMineSlide) >= 2)
-                        _cachedNotePen.Color = Color.Gold;
-                    else if (noteD.IsMine)
-                        _cachedNotePen.Color = Color.LightGray;
-                    else
-                        _cachedNotePen.Color = Color.SkyBlue;
+                    if (noteD.Type == SimaiNoteType.TouchHold)
+                    {
+                        _cachedNotePen ??= new Pen(Color.FromArgb(200, 255, 75, 0), 3);
+                        _cachedNotePen.Width = 3;
+                        var xDelta = (float)(noteD.HoldTime / step) * linewidth / 4f;
+                        //Console.WriteLine("HoldPixel"+ xDelta);
 
-                    _cachedNotePen.DashStyle = DashStyle.Dot;
-                    var xSlide = (float)(noteD.SlideStartTime / step - startindex) * linewidth;
-                    var xSlideRight = (float)(noteD.SlideTime / step) * linewidth + xSlide;
+                        _cachedNotePen.Color = Color.FromArgb(200, 255, 75, 0);
+                        if (noteD.IsMine) _cachedNotePen.Color = Color.LightGray;
+                        graphics.DrawLine(_cachedNotePen, x, y, x + xDelta * 4f, y);
+                        _cachedNotePen.Color = Color.FromArgb(200, 255, 241, 0);
+                        graphics.DrawLine(_cachedNotePen, x, y, x + xDelta * 3f, y);
+                        _cachedNotePen.Color = Color.FromArgb(200, 2, 165, 89);
+                        if (noteD.IsMine) _cachedNotePen.Color = Color.Gray;
+                        graphics.DrawLine(_cachedNotePen, x, y, x + xDelta * 2f, y);
+                        _cachedNotePen.Color = Color.FromArgb(200, 0, 140, 254);
+                        graphics.DrawLine(_cachedNotePen, x, y, x + xDelta, y);
+                    }
 
-                    if (!float.IsNormal(xSlideRight) || xSlideRight > ushort.MaxValue) xSlideRight = ushort.MaxValue;
-                    if (!float.IsNormal(xSlide)) xSlide = ushort.MaxValue;
+                    if (noteD.Type == SimaiNoteType.Slide)
+                    {
+                        _cachedNotePen ??= new Pen(Color.SkyBlue, 3);
+                        _cachedNotePen.Width = 3;
+                        if (!noteD.IsSlideNoHead)
+                        {
+                            if (noteD.IsBreak) _cachedNotePen.Color = Color.OrangeRed;
+                            else if (isEach) _cachedNotePen.Color = Color.Gold;
+                            else if (noteD.IsMine) _cachedNotePen.Color = Color.LightGray;
+                            else _cachedNotePen.Color = Color.DeepSkyBlue;
+                            _cachedStarBrush!.Color = _cachedNotePen.Color;
+                            graphics.DrawString("*", _cachedStarFont, _cachedStarBrush, new PointF(x - 7f, y - 7f));
+                        }
 
-                    graphics.DrawLine(_cachedNotePen, xSlide, y, xSlideRight, y);
-                    _cachedNotePen.DashStyle = DashStyle.Solid;
+                        if (noteD.IsSlideBreak)
+                            _cachedNotePen.Color = Color.OrangeRed;
+                        else if (slideCount >= 2)
+                            _cachedNotePen.Color = Color.Gold;
+                        else if (noteD.IsMine)
+                            _cachedNotePen.Color = Color.LightGray;
+                        else
+                            _cachedNotePen.Color = Color.SkyBlue;
+
+                        _cachedNotePen.DashStyle = DashStyle.Dot;
+                        var xSlide = (float)(noteD.SlideStartTime / step - startindex) * linewidth;
+                        var xSlideRight = (float)(noteD.SlideTime / step) * linewidth + xSlide;
+
+                        if (!float.IsNormal(xSlideRight) || xSlideRight > ushort.MaxValue) xSlideRight = ushort.MaxValue;
+                        if (!float.IsNormal(xSlide)) xSlide = ushort.MaxValue;
+
+                        graphics.DrawLine(_cachedNotePen, xSlide, y, xSlideRight, y);
+                        _cachedNotePen.DashStyle = DashStyle.Solid;
+                    }
                 }
             }
-        }
 
-        if (playStartTime - currentTime <= deltatime)
-        {
-            //Draw play Start time
-            _cachedPlayStartPen ??= new Pen(Color.Red, 5);
-            var x1 = (float)(playStartTime / step - startindex) * linewidth;
-            PointF[] tranglePoints = { new(x1 - 2, 0), new(x1 + 2, 0), new(x1, 3.46f) };
-            graphics.DrawPolygon(_cachedPlayStartPen, tranglePoints);
-        }
+            if (playStartTime - currentTime <= deltatime)
+            {
+                //Draw play Start time
+                _cachedPlayStartPen ??= new Pen(Color.Red, 5);
+                var x1 = (float)(playStartTime / step - startindex) * linewidth;
+                _trianglePoints[0] = new PointF(x1 - 2, 0);
+                _trianglePoints[1] = new PointF(x1 + 2, 0);
+                _trianglePoints[2] = new PointF(x1, 3.46f);
+                graphics.DrawPolygon(_cachedPlayStartPen, _trianglePoints);
+            }
 
-        if (CursorTime - currentTime <= deltatime)
-        {
-            //Draw ghost cursor
-            _cachedGhostCursorPen ??= new Pen(Color.Orange, 5);
-            var x2 = (float)(CursorTime / step - startindex) * linewidth;
-            PointF[] tranglePoints2 = { new(x2 - 2, 0), new(x2 + 2, 0), new(x2, 3.46f) };
-            graphics.DrawPolygon(_cachedGhostCursorPen, tranglePoints2);
-        }
+            if (CursorTime - currentTime <= deltatime)
+            {
+                //Draw ghost cusor
+                _cachedGhostCursorPen ??= new Pen(Color.Orange, 5);
+                var x2 = (float)(CursorTime / step - startindex) * linewidth;
+                _trianglePoints[0] = new PointF(x2 - 2, 0);
+                _trianglePoints[1] = new PointF(x2 + 2, 0);
+                _trianglePoints[2] = new PointF(x2, 3.46f);
+                graphics.DrawPolygon(_cachedGhostCursorPen, _trianglePoints);
+            }
 
-        graphics.Flush();
-        graphics.Dispose();
-        backBitmap.Dispose();
+            graphics.Flush();
+            // Do NOT dispose graphics or bitmap - they are cached
+            // _cachedWaveGraphics.Dispose();
+            // _cachedWaveBitmap.Dispose();
 
-        //MusicWave.Width = waveLevels.Length * zoominPower;
-        WaveBitmap.AddDirtyRect(new Int32Rect(0, 0, WaveBitmap.PixelWidth, WaveBitmap.PixelHeight));
-        WaveBitmap.Unlock();
-        isDrawing = false;
+            //MusicWave.Width = waveLevels.Length * zoominPower;
+            WaveBitmap.AddDirtyRect(new Int32Rect(0, 0, WaveBitmap.PixelWidth, WaveBitmap.PixelHeight));
+            WaveBitmap.Unlock();
+            isDrawing = false;
         });
     }
 
@@ -509,7 +536,7 @@ public partial class MainWindow : Window
     {
         var minute = (int)time / 60;
         double second = (int)(time - 60 * minute);
-        Dispatcher.Invoke(() => { TimeLabel.Content = string.Format("{0}:{1:00}", minute, second); });
+        Dispatcher.InvokeAsync(() => { TimeLabel.Content = $"{minute}:{second:00}"; });
     }
 
     public void toggle_find()
@@ -675,12 +702,19 @@ public partial class MainWindow : Window
         //太快=>异步=>在另外线程调用的原因。。被自己蠢笑啦
         Dispatcher.Invoke(async () =>
         {
-            SyntaxCheck();
-            await SimaiProcess.Serialize(GetRawFumenText());
-            InvalidateBeatCache();
-            draw_wave();
-            if (!ErrCount.Content.ToString()!.EndsWith("?"))
-                set_err_count(ErrCount.Content.ToString() + "?");
+            var currentText = GetRawFumenText();
+            // Skip redundant serialization if text hasn't changed since last parse
+            if (_lastSerializedText != currentText)
+            {
+                SyntaxCheck();
+                await SimaiProcess.Serialize(currentText);
+                _lastSerializedText = currentText;
+                InvalidateBeatCache();
+            }
+            // Skip wave redraw if already being drawn by visualEffectRefreshTimer during playback
+            if (!isPlaying) draw_wave();
+            if (!_errCountDirty)
+                _errCountDirty = true;
         });
     }
 
@@ -1112,8 +1146,13 @@ public partial class MainWindow : Window
         if (Bass.BASS_ChannelIsActive(bgmStream) == BASSActive.BASS_ACTIVE_PLAYING && (bool)FollowPlayCheck.IsChecked!)
             return;
 
-        await SimaiProcess.Serialize(GetRawFumenText());
-        InvalidateBeatCache();
+        // Only serialize if text actually changed (selection change alone shouldn't trigger full parse)
+        if (_lastSerializedText != GetRawFumenText())
+        {
+            await SimaiProcess.Serialize(GetRawFumenText());
+            _lastSerializedText = GetRawFumenText();
+            InvalidateBeatCache();
+        }
 
         var timings = SimaiProcess.timingLists[selectedDifficulty] ?? new();
         double time = 0d;
