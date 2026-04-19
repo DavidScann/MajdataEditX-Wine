@@ -1,4 +1,4 @@
-﻿using MajdataEdit.Utils;
+using MajdataEdit.Utils;
 using Newtonsoft.Json;
 using System.IO;
 using System.Windows;
@@ -59,7 +59,7 @@ public partial class MainWindow : Window
                 startAt = DateTime.Now.AddSeconds(5d);
                 InternalSwitchWindow(false);
                 generateSoundEffectList(0.0, isOpIncluded);
-                var task = new Task(() => RenderSoundEffect(5d / GetPlaybackSpeed()));
+                var task = new Task(() => renderSoundEffect(5d / GetPlaybackSpeed()));
                 try
                 {
                     task.Start();

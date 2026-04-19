@@ -1,4 +1,4 @@
-﻿using DiscordRPC.Logging;
+using DiscordRPC.Logging;
 using MajdataEdit.AutoSaveModule;
 using MajdataEdit.ChartShare;
 using MajdataEdit.MaiMuriDX;
@@ -1276,4 +1276,74 @@ public partial class MainWindow : Window
             _ => 1f
         };
     }
+
+    #region New Feature Event Handlers
+
+    private void SwitchFullKeyboardMode_Click(object sender, RoutedEventArgs e)
+    {
+        editorSetting!.FullKeyboardMode = !editorSetting.FullKeyboardMode;
+        MessageBox.Show(this, $"Full Keyboard Mode: {(editorSetting.FullKeyboardMode ? "ON" : "OFF")}", "Info");
+    }
+
+    private void ExtractMp3_Click(object sender, RoutedEventArgs e)
+    {
+        MessageBox.Show(this, "Extract MP3 feature not yet implemented", "Info");
+    }
+
+    private void MediaQuickProcess_Click(object sender, RoutedEventArgs e)
+    {
+        MediaQuickProcessPopup.IsOpen = true;
+    }
+
+    private void ConvertToFcpxml_Click(object sender, RoutedEventArgs e)
+    {
+        FcpxmlFpsPopup.IsOpen = true;
+    }
+
+    private void FcpxmlFpsPopup_Opened(object sender, EventArgs e)
+    {
+        FcpxmlFpsBox.Focus();
+    }
+
+    private void FcpxmlFpsBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            ConfirmFps_Click(sender, e);
+        }
+    }
+
+    private void ConfirmFps_Click(object sender, RoutedEventArgs e)
+    {
+        FcpxmlFpsPopup.IsOpen = false;
+        MessageBox.Show(this, $"FCPXML export with FPS: {FcpxmlFpsBox.Text}", "Info");
+    }
+
+    private void MediaQuickProcessPopup_Opened(object sender, EventArgs e)
+    {
+        BeatsCountBox.Focus();
+    }
+
+    private void BeatsCountBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        // Only allow numeric input
+        if (e.Key < Key.D0 || e.Key > Key.D9)
+        {
+            if (e.Key < Key.NumPad0 || e.Key > Key.NumPad9)
+            {
+                if (e.Key != Key.Back && e.Key != Key.Delete)
+                {
+                    e.Handled = true;
+                }
+            }
+        }
+    }
+
+    private void ConfilmMediaQuickProcess_Click(object sender, RoutedEventArgs e)
+    {
+        MediaQuickProcessPopup.IsOpen = false;
+        MessageBox.Show(this, $"Media Quick Process with {BeatsCountBox.Text} beats", "Info");
+    }
+
+    #endregion
 }

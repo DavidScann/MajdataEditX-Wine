@@ -1,4 +1,4 @@
-﻿using MajSimai;
+using MajSimai;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -141,7 +141,7 @@ public partial class MainWindow
                     if ((bool)FollowPlayCheck.IsChecked!)
                     {
                         CursorTime = (float)nearestTime;
-                        SeekTextFromTime();
+                        SeekTextFromTime(nearestTime);
                     }
                 });
             }
