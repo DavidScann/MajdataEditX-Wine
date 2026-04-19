@@ -6,7 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <UseWPF>true</UseWPF>
 
-        <Version>5.1.3</Version>
+        <Version>5.1.6</Version>
         <Company></Company>
         <Authors>bbben</Authors>
         <PackageProjectUrl>https://github.com/re-poem/MajdataEditX</PackageProjectUrl>
@@ -36,6 +36,7 @@
         <PackageReference Include="DiffMatchPatch" Version="1.0.3" />
         <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.0" />
+        <PackageReference Include="MvvmLightLibs" Version="5.4.1.1" />
         <PackageReference Include="pythonnet" Version="3.0.5" />
         <PackageReference Include="radio42.Bass.Net.core" Version="2.4.17.5" />
         <PackageReference Include="DiscordRichPresence" Version="1.2.1.24" />

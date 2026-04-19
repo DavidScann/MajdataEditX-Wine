@@ -31,9 +31,8 @@ public partial class MainWindow : Window
     {
         //if (Op_Button.IsEnabled == false) return;  //?
 
-        if (lastEditorState == EditorControlMethod.Start || playMethod != PlayMethod.Normal)
-            if (!RequestStop())
-                return;
+        if (lastEditorState == EditorControlMethod.Start)
+            return;
 
         FumenContent.Focus();
         SaveFumen(false);
@@ -53,13 +52,14 @@ public partial class MainWindow : Window
         switch (playMethod)
         {
             case PlayMethod.Record:
+                MessageBox.Show(GetLocalizedString("AskRender"), GetLocalizedString("Attention"));
+                if (lastEditorState != EditorControlMethod.Stop) Stop();
                 Bass.BASS_ChannelSetAttribute(bgmStream, BASSAttribute.BASS_ATTRIB_FREQ, originFreq * GetPlaybackSpeed());
                 Bass.BASS_ChannelSetPosition(bgmStream, 0);
                 startAt = DateTime.Now.AddSeconds(5d);
-                MessageBox.Show(GetLocalizedString("AskRender"), GetLocalizedString("Attention"));
                 InternalSwitchWindow(false);
                 generateSoundEffectList(0.0, isOpIncluded);
-                var task = new Task(() => renderSoundEffect(5d / GetPlaybackSpeed()));
+                var task = new Task(() => RenderSoundEffect(5d / GetPlaybackSpeed()));
                 try
                 {
                     task.Start();
@@ -132,6 +132,8 @@ public partial class MainWindow : Window
 
     private void Pause()
     {
+        if (lastEditorState == EditorControlMethod.Stop) return;
+
         Op_Button.IsEnabled = true;
         isPlaying = false;
         isPlan2Stop = false;
@@ -198,8 +200,9 @@ public partial class MainWindow : Window
 
     private void SetBgmPosition(double time)
     {
-        if (lastEditorState == EditorControlMethod.Pause) RequestStop();
+        if (lastEditorState != EditorControlMethod.Stop) Stop();
         Bass.BASS_ChannelSetPosition(bgmStream, time);
+        draw_wave();
     }
 
 

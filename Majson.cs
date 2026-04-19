@@ -120,4 +120,5 @@ public class EditorSetting
     public bool SmoothSlideAnime = false;
     public string ShareUserName = "Guest";
     public string ShareColorHex = "#FFFFFF";
+    public bool FullKeyboardMode = false;
 }

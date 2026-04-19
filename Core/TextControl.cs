@@ -1,5 +1,4 @@
 ﻿using MajdataEdit.Utils;
-using MajSimai;
 using System.Windows;
 using Un4seen.Bass;
 
@@ -57,17 +56,39 @@ public partial class MainWindow : Window
         }
     }
 
-    // 依据时间或note索引挪光标
-    public void SeekTextFromTime()
+    // 导航到当前位置
+    public void SeekTextFromCurTime()
     {
         var time = Bass.BASS_ChannelBytes2Seconds(bgmStream, Bass.BASS_ChannelGetPosition(bgmStream));
-        List<SimaiTimingPoint> timingList = new();
-        if (SimaiProcess.timingLists[selectedDifficulty] != null)
-            timingList.AddRange(SimaiProcess.timingLists[selectedDifficulty]);
+        SeekTextFromTime(time);
+    }
+
+    // 依据时间挪光标
+    public void SeekTextFromTime(double time)
+    {
+        var timingList = SimaiProcess.timingLists[selectedDifficulty];
         if (timingList.Count == 0) return;
-        timingList.Sort((x, y) => Math.Abs(time - x.Timing).CompareTo(Math.Abs(time - y.Timing)));
-        var theNote = timingList[0];
-        SetRawFumenPosition(theNote.RawTextPosition);
+
+        var theNote = timingList.MinBy(x => Math.Abs(time - x.Timing));
+        SetRawFumenPosition(theNote?.RawTextPosition ?? 0);
+    }
+
+    public void SeekTextFromNoteOffset(int offset)
+    {
+        var timingList = SimaiProcess.noteLists[selectedDifficulty];
+        if (timingList.Count == 0) return;
+
+        var targetPos = GetRawFumenPosition();
+
+        var indexed = timingList
+            .Select((x, i) => (Value: x, Index: i))
+            .MinBy(x => Math.Abs(x.Value.RawTextPosition - targetPos));
+
+        if (indexed.Index + offset < timingList.Count)
+        {
+            var theNote = timingList[indexed.Index + offset];
+            SetRawFumenPosition(theNote.RawTextPosition);
+        }
     }
 
     public void ApplyMirror(Mirror.HandleType handleType)

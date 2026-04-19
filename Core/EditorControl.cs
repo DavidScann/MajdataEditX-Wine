@@ -155,18 +155,22 @@ public partial class MainWindow : Window
             editorSetting.RenderMode = 1;
 
         LocalizeDictionary.Instance.Culture = new CultureInfo(editorSetting.Language);
+
+        // 用户快捷键设置
         AddGesture(editorSetting.PlayPauseKey, "PlayAndPause");
         AddGesture(editorSetting.PlayStopKey, "StopPlaying");
         AddGesture(editorSetting.SaveKey, "SaveFile");
         AddGesture(editorSetting.SendViewerKey, "SendToView");
         AddGesture(editorSetting.IncreasePlaybackSpeedKey, "IncreasePlaybackSpeed");
         AddGesture(editorSetting.DecreasePlaybackSpeedKey, "DecreasePlaybackSpeed");
-        AddGesture("Ctrl+f", "Find");
         AddGesture(editorSetting.MirrorLeftRightKey, "MirrorLR");
         AddGesture(editorSetting.MirrorUpDownKey, "MirrorUD");
         AddGesture(editorSetting.Mirror180Key, "Mirror180");
         AddGesture(editorSetting.Mirror45Key, "Mirror45");
         AddGesture(editorSetting.MirrorCcw45Key, "MirrorCcw45");
+        // 内置快捷键
+        AddGesture("Ctrl+f", "Find");
+
         FumenContent.FontSize = editorSetting.FontSize;
 
         ViewerCover.Content = editorSetting.BackgroundCover.ToString();
@@ -174,6 +178,8 @@ public partial class MainWindow : Window
         ViewerTouchSpeed.Content = editorSetting.TouchSpeed.ToString("F1");
 
         chartChangeTimer.Interval = editorSetting.ChartRefreshDelay; // 设置更新延迟
+
+        SetFullKeyboardMode(editorSetting.FullKeyboardMode);
 
         SaveEditorSetting(); // 覆盖旧版本setting
     }
@@ -193,7 +199,7 @@ public partial class MainWindow : Window
         delta = delta * deltatime / (Width / 2);
         var time = Bass.BASS_ChannelBytes2Seconds(bgmStream, Bass.BASS_ChannelGetPosition(bgmStream));
         SetBgmPosition(time + delta);
-        SeekTextFromTime();
+        SeekTextFromCurTime();
         Task.Run(() => draw_wave());
     }
 
@@ -291,8 +297,8 @@ public partial class MainWindow : Window
             }
 
             var resJson = JsonConvert.DeserializeObject<JObject>(response)!;
-            var latestVersionString = resJson["tag_name"]!.ToString();
-            var releaseUrl = resJson["html_url"]!.ToString();
+            var latestVersionString = resJson["tag_name"]?.ToString();
+            var releaseUrl = resJson["html_url"]?.ToString();
 
             var latestVersion = SemVersion.Parse(latestVersionString, SemVersionStyles.Any);
 
@@ -368,12 +374,26 @@ public partial class MainWindow : Window
         return GetWindowsTitleString() + " - " + info;
     }
 
+    private void SetFullKeyboardMode(bool enabled)
+    {
+        if (enabled)
+        {
+            editorSetting!.FullKeyboardMode = true;
+            SwitchFullKeyboardMode.Header = GetLocalizedString("SwitchFullKeyboardMode") + "   ✔";
+        }
+        else
+        {
+            editorSetting!.FullKeyboardMode = false;
+            SwitchFullKeyboardMode.Header = GetLocalizedString("SwitchFullKeyboardMode");
+        }
+    }
+
     //////////////////// Helper Functions ////////////////////
 
     private void AddGesture(string keyGusture, string command)
     {
         var gesture = (InputGesture)new KeyGestureConverter().ConvertFromString(keyGusture)!;
-        var inputBinding = new InputBinding((ICommand)FumenContent.Resources[command], gesture);
+        var inputBinding = new InputBinding(editorCommands[command], gesture);
         FumenContent.InputBindings.Add(inputBinding);
     }
 

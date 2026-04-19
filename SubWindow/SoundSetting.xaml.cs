@@ -112,6 +112,7 @@ public partial class SoundSetting : Window
     {
         UpdateLevelTimer.Stop();
         UpdateLevelTimer.Dispose();
+        MajdataEdit.MainWindow.instance.SetSavedState(false);
     }
 
     private void BtnSetDefault_Click(object sender, RoutedEventArgs e)

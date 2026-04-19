@@ -1,4 +1,4 @@
-﻿using MajSimai;
+using MajSimai;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -146,10 +146,10 @@ public partial class MainWindow
                     Dispatcher.InvokeAsync(() =>
                     {
                         _seekDispatchPending = false;
-                        if ((bool)FollowPlayCheck.IsChecked!)
+                        if (FollowPlayCheck.IsChecked == true)
                         {
                             CursorTime = _pendingSeekTime;
-                            SeekTextFromTime();
+                            SeekTextFromCurTime();
                         }
                     });
                 }
@@ -382,13 +382,12 @@ public partial class MainWindow
         else
             // 如果足够播完 那么就等到BGM结束再停止
             extraTime4AllPerfect = -1;
-
-        //Console.WriteLine(JsonConvert.SerializeObject(waitToBePlayed));
     }
 
-    private void renderSoundEffect(double delaySeconds)
+    private void RenderSoundEffect(double delaySeconds)
     {
-        //TODO: 改为异步并增加提示窗口
+        var speed = GetPlaybackSpeed();
+
         var sfxPath = Environment.CurrentDirectory + "/SFX";
         var tempPath = Environment.CurrentDirectory + "/MajdataView_Data/StreamingAssets";
         var converterPath = tempPath + "/ffmpeg.exe";
@@ -550,7 +549,7 @@ public partial class MainWindow
         {
             var startIndex = (int)(soundTiming.time * freq) * 2; //乘2因为有两个channel
 
-            startIndex = (int)(startIndex / GetPlaybackSpeed());
+            startIndex = (int)(startIndex / speed);
 
             if (soundTiming.hasAnswer) sampleMix(seMixTrack, startIndex, SoundDataType.Answer, answerVol);
             if (soundTiming.hasJudge) sampleMix(seMixTrack, startIndex, SoundDataType.Judge, judgeVol);
@@ -591,7 +590,15 @@ public partial class MainWindow
         var outPath = maidataDir + "/out.wav";
         using var outStream = File.Create(outPath);
         using var writer = new BinaryWriter(outStream);
-        writer.Write(CreateWaveFileHeader(bgmBank.Raw!.Length * 2 + delayEmpty.Length * 2, 2, freq, 16));
+
+        int dataSize = (int)(sampleCount * sizeof(short) / speed);
+
+        writer.Write(CreateWaveFileHeader(
+            dataSize,
+            2,
+            freq,
+            16
+        ));
 
         for (var i = 0; i < delayEmpty.Length; i++)
         {
@@ -602,7 +609,15 @@ public partial class MainWindow
 
         for (var i = 0; i < sampleCount; i++)
         {
-            var sampleValue = bgmBank.Raw[i] * bgmVol + seMixTrack[i] + touchHoldTrack[i];
+            int idx = (int)(i * speed);
+            double frac = i * speed - idx;
+
+            short s1 = (idx < bgmBank.Raw!.Length) ? bgmBank.Raw[idx] : (short)0;
+            short s2 = (idx + 1 < bgmBank.Raw.Length) ? bgmBank.Raw[idx + 1] : s1;
+
+            double bgm = s1 + (s2 - s1) * frac;
+
+            var sampleValue = bgm * bgmVol + seMixTrack[i] + touchHoldTrack[i];
             var value = Math.Clamp((long)sampleValue, short.MinValue, short.MaxValue);
             writer.Write((short)value);
         }

@@ -129,6 +129,14 @@
                           IsEnabled="False" />
                     <MenuItem x:Name="MaiMuriDX" Header="{lex:Loc LaunchMaiMuriDX}" Click="MaiMuriDXButton_Click"
                           IsEnabled="False" />
+                    <Separator />
+                    <MenuItem x:Name="SwitchFullKeyboardMode" Header="{lex:Loc SwitchFullKeyboardMode}" 
+                              Click="SwitchFullKeyboardMode_Click" />
+                    <Separator />
+                    <MenuItem x:Name="ExtractMp3" Header="{lex:Loc ExtractMp3}" Click="ExtractMp3_Click"  />
+                    <MenuItem x:Name="MediaQuickProcess" Header="{lex:Loc MediaQuickProcess}" Click="MediaQuickProcess_Click" IsEnabled="False" />
+                    <MenuItem x:Name="ConvertToFcpxml" Header="{lex:Loc ConvertToFcpxml}" Click="ConvertToFcpxml_Click"
+                              IsEnabled="False"/>
                 </MenuItem>
                 <MenuItem Header="Majnet" Click="MenuItem_Majnet_Click"
                       Foreground="{DynamicResource ButtonForeground}" Template="{DynamicResource DarkMenuItem}" />
@@ -177,35 +185,7 @@
                 <Style TargetType="{x:Type TextBox}">
                     <Setter Property="Block.LineHeight" Value="28.5"/>
                 </Style>
-
-                <RoutedUICommand x:Key="PlayAndPause" Text="PlayAndPause" />
-                <RoutedUICommand x:Key="SaveFile" Text="SaveFile" />
-                <RoutedUICommand x:Key="StopPlaying" Text="StopPlaying" />
-                <RoutedUICommand x:Key="SendToView" Text="SendToView" />
-                <RoutedUICommand x:Key="IncreasePlaybackSpeed" Text="IncreasePlaybackSpeed" />
-                <RoutedUICommand x:Key="DecreasePlaybackSpeed" Text="DecreasePlaybackSpeed" />
-                <RoutedUICommand x:Key="Find" Text="Find" />
-                <RoutedUICommand x:Key="MirrorLR" Text="MirrorLR" />
-                <RoutedUICommand x:Key="MirrorUD" Text="MirrorUD" />
-                <RoutedUICommand x:Key="Mirror180" Text="Mirror180" />
-                <RoutedUICommand x:Key="Mirror45" Text="Mirror45" />
-                <RoutedUICommand x:Key="MirrorCcw45" Text="MirrorCcw45" />
             </TextBox.Resources>
-
-            <TextBox.CommandBindings>
-                <CommandBinding Command="{StaticResource PlayAndPause}" CanExecute="PlayAndPause_CanExecute" />
-                <CommandBinding Command="{StaticResource SaveFile}" CanExecute="SaveFile_Command_CanExecute" />
-                <CommandBinding Command="{StaticResource StopPlaying}" CanExecute="StopPlaying_CanExecute" />
-                <CommandBinding Command="{StaticResource SendToView}" CanExecute="SendToView_CanExecute" />
-                <CommandBinding Command="{StaticResource IncreasePlaybackSpeed}" CanExecute="IncreasePlaybackSpeed_CanExecute" />
-                <CommandBinding Command="{StaticResource DecreasePlaybackSpeed}" CanExecute="DecreasePlaybackSpeed_CanExecute" />
-                <CommandBinding Command="{StaticResource Find}" CanExecute="FindCommand_CanExecute" />
-                <CommandBinding Command="{StaticResource MirrorLR}" CanExecute="MirrorLRCommand_CanExecute" />
-                <CommandBinding Command="{StaticResource MirrorUD}" CanExecute="MirrorUDCommand_CanExecute" />
-                <CommandBinding Command="{StaticResource Mirror180}" CanExecute="Mirror180Command_CanExecute" />
-                <CommandBinding Command="{StaticResource Mirror45}" CanExecute="Mirror45Command_CanExecute" />
-                <CommandBinding Command="{StaticResource MirrorCcw45}" CanExecute="MirrorCcw45Command_CanExecute" />
-            </TextBox.CommandBindings>
         </TextBox>
         <Canvas x:Name="CursorOverlay" 
                 IsHitTestVisible="False" 
@@ -340,5 +320,85 @@
                 <TextBlock x:Name="ShareStatus" Foreground="{StaticResource HelperForeground}"/>
             </StatusBarItem>
         </StatusBar>
+
+        <Popup x:Name="FcpxmlFpsPopup"
+               Placement="Center" 
+               PlacementTarget="{Binding ElementName=MainMenu}"
+               StaysOpen="False"
+               AllowsTransparency="True"
+               Opened="FcpxmlFpsPopup_Opened">
+
+            <Border Background="{DynamicResource ButtonsBackground}"
+                    BorderBrush="{DynamicResource ButtonForeground}"
+                    BorderThickness="1"
+                    Padding="12"
+                    CornerRadius="8">
+                <StackPanel Orientation="Vertical">
+                    <TextBlock Text="{lex:Loc InputFPS}" 
+                               HorizontalAlignment="Center"
+                               FontWeight="Bold"
+                               Margin="0,0,0,10"
+                               Foreground="{DynamicResource ButtonForeground}"/>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox x:Name="FcpxmlFpsBox"
+                                 Width="80" Height="25"
+                                 VerticalContentAlignment="Center"
+                                 Margin="0,0,8,0"
+                                 Text="60" KeyDown="FcpxmlFpsBox_KeyDown" />
+
+                        <Button Content="OK"
+                                Padding="10,2"
+                                Click="ConfirmFps_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Popup>
+
+        <Popup x:Name="MediaQuickProcessPopup"
+               Placement="Center" 
+               PlacementTarget="{Binding ElementName=MainMenu}"
+               StaysOpen="False"
+               AllowsTransparency="True" 
+               Opened="MediaQuickProcessPopup_Opened">
+
+            <Border Background="{DynamicResource ButtonsBackground}"
+                    BorderBrush="{DynamicResource ButtonForeground}"
+                    BorderThickness="1"
+                    Padding="12"
+                    CornerRadius="8">
+                <StackPanel Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{lex:Loc BeatsCount}" 
+                               HorizontalAlignment="Center"
+                               FontWeight="Bold"
+                               Margin="0,0,0,10"
+                               Foreground="{DynamicResource ButtonForeground}"/>
+                        <TextBox x:Name="BeatsCountBox"
+                                 Width="50" Height="25"
+                                 VerticalContentAlignment="Center" 
+                                 HorizontalAlignment="Right"
+                                 Margin="20,0,0,0"
+                                 Text="4" 
+                                 PreviewKeyDown="BeatsCountBox_PreviewKeyDown"/>
+                    </StackPanel>
+                    
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{lex:Loc FreezeFrame}"
+                               HorizontalAlignment="Center"
+                               FontWeight="Bold"
+                               Margin="0,0,0,10"
+                               Foreground="{DynamicResource ButtonForeground}"/>
+                        <CheckBox x:Name="FreezeFrameCheckBox"
+                                 VerticalContentAlignment="Center"
+                                 HorizontalAlignment="Right"
+                                 Margin="20,0,8,0"/>
+                    </StackPanel>
+
+                    <Button Content="OK" Padding="10,2" Margin="20,0,20,0" 
+                            Click="ConfilmMediaQuickProcess_Click"/>
+                </StackPanel>
+            </Border>
+        </Popup>
     </Grid>
 </Window>

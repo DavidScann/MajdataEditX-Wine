@@ -263,6 +263,33 @@ Critical Perfect: ±{5:0.0} ms，Sensors:
   <data name="JudgeDisplay" xml:space="preserve">
     <value>Judge Display</value>
   </data>
+  <data name="JudgeDisplayNone" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="JudgeDisplayFastLate" xml:space="preserve">
+    <value>Fast/Late Only</value>
+  </data>
+  <data name="JudgeDisplayLevel" xml:space="preserve">
+    <value>Level Only</value>
+  </data>
+  <data name="JudgeDisplayBoth" xml:space="preserve">
+    <value>Both</value>
+  </data>
+  <data name="SwitchFullKeyboardMode" xml:space="preserve">
+    <value>Full-Keyboard Mode</value>
+  </data>
+  <data name="ConvertToFcpxml" xml:space="preserve">
+    <value>Convert To FCPXML</value>
+  </data>
+  <data name="MediaQuickProcess" xml:space="preserve">
+    <value>Media Process Quickly</value>
+  </data>
+  <data name="NoMp4Found" xml:space="preserve">
+    <value>no pv.mp4/mv.mp4/bg.mp4 found. Continue?</value>
+  </data>
+  <data name="ExtractMp3" xml:space="preserve">
+    <value>New Chart From Video</value>
+  </data>
   <data name="AskCloseView" xml:space="preserve">
     <value>Viewを閉しますか？</value>
   </data>
@@ -656,16 +683,13 @@ Open Browser to download latest update of Majdata?</value>
   <data name="UserLeft" xml:space="preserve">
     <value>{0} Left Chart Share {1}</value>
   </data>
-  <data name="JudgeDisplayNone" xml:space="preserve">
-    <value>None</value>
+  <data name="InputFPS" xml:space="preserve">
+    <value>Input FPS</value>
   </data>
-  <data name="JudgeDisplayFastLate" xml:space="preserve">
-    <value>Fast/Late Only</value>
+  <data name="BeatsCount" xml:space="preserve">
+    <value>Beats Count</value>
   </data>
-  <data name="JudgeDisplayLevel" xml:space="preserve">
-    <value>Level Only</value>
-  </data>
-  <data name="JudgeDisplayBoth" xml:space="preserve">
-    <value>Both</value>
+  <data name="FreezeFrame" xml:space="preserve">
+    <value>Freeze Frame</value>
   </data>
 </root>

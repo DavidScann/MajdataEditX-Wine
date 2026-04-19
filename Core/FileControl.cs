@@ -1,4 +1,4 @@
-﻿using MajdataEdit.AutoSaveModule;
+using MajdataEdit.AutoSaveModule;
 using MajdataEdit.ChartShare;
 using Microsoft.AspNetCore.SignalR.Client;
 using Newtonsoft.Json;
@@ -66,11 +66,13 @@ public partial class MainWindow : Window
             if (!File.Exists(audioPath))
             {
                 MessageBox.Show(this, GetLocalizedString("NoTrack"), GetLocalizedString("Error"));
+                set_loading(false);
                 return;
             }
             if (!File.Exists(dataPath))
             {
                 MessageBox.Show(this, GetLocalizedString("NoMaidata_txt"), GetLocalizedString("Error"));
+                set_loading(false);
                 return;
             }
             maidataDir = path;
@@ -118,7 +120,7 @@ public partial class MainWindow : Window
             SetRawFumenText(SimaiProcess.fumens[selectedDifficulty]);
             await SimaiProcess.Serialize(GetRawFumenText());
             InvalidateBeatCache();
-            SeekTextFromTime();
+            SeekTextFromCurTime();
             OffsetTextBox.Text = SimaiProcess.simaiFile.Offset.ToString();
 
             AutoSaveManager.Of().SetAutoSaveEnable(true);
@@ -223,7 +225,7 @@ public partial class MainWindow : Window
             LevelSelector.SelectedIndex = selectedDifficulty;
             OffsetTextBox.Text = SimaiProcess.simaiFile.Offset.ToString();
 
-            SeekTextFromTime();
+            SeekTextFromCurTime();
 
 
             AutoSaveManager.Of().SetAutoSaveEnable(false);
@@ -287,7 +289,7 @@ public partial class MainWindow : Window
             File.WriteAllText(path + "/maidata.txt",
                 "&title=" + GetLocalizedString("SetTitle") + "\n" +
                 "&artist=" + GetLocalizedString("SetArtist") + "\n" +
-                "&des=" + GetLocalizedString("SetDes") + "\n" +
+                // "&des=" + GetLocalizedString("SetDes") + "\n" +
                 "&first=0\n");
     }
 
@@ -350,13 +352,11 @@ public partial class MainWindow : Window
         {
             songLength = Bass.BASS_ChannelBytes2Seconds(bgmDecode,
                 Bass.BASS_ChannelGetLength(bgmDecode, BASSMode.BASS_POS_BYTE));
-            Bass.BASS_StreamFree(bgmDecode);
-            var bgmSample = Bass.BASS_SampleLoad(audioDir, 0, 0, 1, BASSFlag.BASS_DEFAULT);
-            var bgmInfo = Bass.BASS_SampleGetInfo(bgmSample);
-            var freq = bgmInfo.freq;
-            var sampleCount = (long)(songLength * freq * 2);
+            var bgmInfo = Bass.BASS_ChannelGetInfo(bgmDecode);
+
+            var sampleCount = (long)(songLength * bgmInfo.freq * bgmInfo.chans);
             var bgmRAW = new short[sampleCount];
-            Bass.BASS_SampleGetData(bgmSample, bgmRAW);
+            Bass.BASS_ChannelGetData(bgmDecode, bgmRAW, (int)(sampleCount * sizeof(short)));
 
             waveRaws[0] = new short[sampleCount / 20 + 1];
             for (var i = 0; i < sampleCount; i = i + 20) waveRaws[0][i / 20] = bgmRAW[i];
@@ -370,6 +370,10 @@ public partial class MainWindow : Window
             MessageBox.Show("mp3/ogg解码失败。\nMP3/OGG Decode fail.\n" + e.Message + Bass.BASS_ErrorGetCode());
             Bass.BASS_StreamFree(bgmDecode);
             Process.Start("https://github.com/LingFeng-bbben/MajdataEdit/issues/26");
+        }
+        finally
+        {
+            Bass.BASS_StreamFree(bgmDecode);
         }
     }
 

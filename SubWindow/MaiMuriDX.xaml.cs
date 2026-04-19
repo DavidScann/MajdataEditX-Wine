@@ -38,7 +38,7 @@ public partial class LaunchMaiMuriDX : Window
 
         try
         {
-            RunArg.render = (bool)RenderEnable_Checkbox.IsChecked!;
+            RunArg.render = RenderEnable_Checkbox.IsChecked == true;
 
             string home = Path.Combine(Directory.GetCurrentDirectory(), "MaiMuriDX");
             string py_home = Path.Combine(home, "python312-embed");

@@ -1,9 +1,11 @@
-﻿using DiscordRPC.Logging;
+using DiscordRPC.Logging;
 using MajdataEdit.AutoSaveModule;
 using MajdataEdit.ChartShare;
 using MajdataEdit.MaiMuriDX;
 using MajdataEdit.Utils;
 using MajSimai;
+using MajSimai.Extensions.Converter;
+using MajSimai.Extensions.MediaProcessor;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Win32;
 using Python.Runtime;
@@ -16,6 +18,7 @@ using System.Media;
 using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -67,6 +70,8 @@ public partial class MainWindow : Window
         SyntaxCheckButton.IsEnabled = false;
         MaiMuriDX.IsEnabled = false;
         Menu_ToggleChartShare.IsEnabled = false;
+        ConvertToFcpxml.IsEnabled = false;
+        MediaQuickProcess.IsEnabled = false;
 
         // window title
         TheWindow.Title = GetWindowsTitleString();
@@ -98,6 +103,8 @@ public partial class MainWindow : Window
             MaiMuriDX.IsEnabled = true;
             MapInfo.IsEnabled = true;
             Menu_ToggleChartShare.IsEnabled = true;
+            ConvertToFcpxml.IsEnabled = true;
+            MediaQuickProcess.IsEnabled = true;
 
             // limit for editor
             LevelSelector.IsEnabled = true;
@@ -128,6 +135,8 @@ public partial class MainWindow : Window
 
             // window title
             TheWindow.Title = GetWindowsTitleString(SimaiProcess.simaiFile.Title + " Share");
+
+            ConvertToFcpxml.IsEnabled = true;
         }
         else
         {
@@ -146,6 +155,8 @@ public partial class MainWindow : Window
 
             // window title
             TheWindow.Title = GetWindowsTitleString(SimaiProcess.simaiFile.Title);
+
+            ConvertToFcpxml.IsEnabled = false;
         }
     }
     public void set_host(bool value)
@@ -491,13 +502,15 @@ public partial class MainWindow : Window
                         if (!float.IsNormal(xRight) || xRight > ushort.MaxValue) xRight = ushort.MaxValue;
                         if (xRight - x < 1f) xRight = x + 5;
                         graphics.DrawLine(_cachedNotePen, x, y, xRight, y);
-
                     }
 
                     if (noteD.Type == SimaiNoteType.TouchHold)
                     {
                         _cachedNotePen.Width = 3;
-                        var xDelta = (float)(noteD.HoldTime / step) * linewidth / 4f;
+                        var xLen = (float)(noteD.HoldTime / step) * linewidth;
+                        if (xLen > ushort.MaxValue) xLen = ushort.MaxValue;
+                        if (xLen < 1f) xLen = 5;
+                        var xDelta = xLen / 4f;
                         //Console.WriteLine("HoldPixel"+ xDelta);
 
                         _cachedNotePen.Color = Color.FromArgb(200, 255, 75, 0);
@@ -638,6 +651,22 @@ public partial class MainWindow : Window
             RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
         }
         instance = this;
+
+        editorCommands = new()
+        {
+            { "PlayAndPause", new(PlayAndPauseCommand) },
+            { "SaveFile", new(SaveFileCommand) },
+            { "StopPlaying", new(StopPlayingCommand) },
+            { "SendToView", new(SendToViewCommand) },
+            { "IncreasePlaybackSpeed", new(IncreasePlaybackSpeedCommand) },
+            { "DecreasePlaybackSpeed", new(DecreasePlaybackSpeedCommand) },
+            { "Find", new(FindCommand) },
+            { "MirrorLR", new(MirrorLRCommand) },
+            { "MirrorUD", new(MirrorUDCommand) },
+            { "Mirror180", new(Mirror180Command) },
+            { "Mirror45", new(Mirror45Command) },
+            { "MirrorCcw45", new(MirrorCcw45Command) },
+        };
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -1026,63 +1055,63 @@ public partial class MainWindow : Window
 
     #region 快捷键
 
-    private void PlayAndPause_CanExecute(object? sender, CanExecuteRoutedEventArgs e)
+    private void PlayAndPauseCommand()
     {
         TogglePlayAndStop();
     }
 
-    private void StopPlaying_CanExecute(object? sender, CanExecuteRoutedEventArgs e)
+    private void StopPlayingCommand()
     {
         TogglePlayAndPause();
     }
 
-    private void SaveFile_Command_CanExecute(object? sender, CanExecuteRoutedEventArgs e)
+    private void SaveFileCommand()
     {
         SaveFumen(true);
         SystemSounds.Beep.Play();
     }
 
-    private void SendToView_CanExecute(object? sender, CanExecuteRoutedEventArgs e)
+    private void SendToViewCommand()
     {
         TogglePlayAndStop(PlayMethod.Op);
     }
 
-    private void IncreasePlaybackSpeed_CanExecute(object? sender, CanExecuteRoutedEventArgs e)
+    private void IncreasePlaybackSpeedCommand()
     {
         SetPlaybackSpeedDiff(1);
     }
 
-    private void DecreasePlaybackSpeed_CanExecute(object? sender, CanExecuteRoutedEventArgs e)
+    private void DecreasePlaybackSpeedCommand()
     {
         SetPlaybackSpeedDiff(-1);
     }
 
-    private void FindCommand_CanExecute(object? sender, CanExecuteRoutedEventArgs e)
+    private void FindCommand()
     {
         toggle_find();
     }
 
-    private void MirrorLRCommand_CanExecute(object? sender, CanExecuteRoutedEventArgs e)
+    private void MirrorLRCommand()
     {
         ApplyMirror(Mirror.HandleType.LRMirror);
     }
 
-    private void MirrorUDCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+    private void MirrorUDCommand()
     {
         ApplyMirror(Mirror.HandleType.UDMirror);
     }
 
-    private void Mirror180Command_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+    private void Mirror180Command()
     {
         ApplyMirror(Mirror.HandleType.HalfRotation);
     }
 
-    private void Mirror45Command_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+    private void Mirror45Command()
     {
         ApplyMirror(Mirror.HandleType.Rotation45);
     }
 
-    private void MirrorCcw45Command_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+    private void MirrorCcw45Command()
     {
         ApplyMirror(Mirror.HandleType.CcwRotation45);
     }
@@ -1179,16 +1208,20 @@ public partial class MainWindow : Window
     private async void FumenContent_SelectionChanged(object sender, RoutedEventArgs e)
     {
         if (IsLoading) return;
+
         NoteNowText.Content = 
             (FumenContent.Text[..FumenContent.CaretIndex] //.Replace("\r", "") //没区别
                                       .Count(o => o == '\n') + 1) + " 行";
-        if (Bass.BASS_ChannelIsActive(bgmStream) == BASSActive.BASS_ACTIVE_PLAYING && (bool)FollowPlayCheck.IsChecked!)
+
+        if (Bass.BASS_ChannelIsActive(bgmStream) == BASSActive.BASS_ACTIVE_PLAYING && FollowPlayCheck.IsChecked == true)
             return;
 
         await SimaiProcess.Serialize(GetRawFumenText());
         InvalidateBeatCache();
 
-        var timings = SimaiProcess.timingLists[selectedDifficulty] ?? new();
+        var timings = SimaiProcess.timingLists[selectedDifficulty];
+        if (SimaiProcess.timingLists[selectedDifficulty] == null) return;
+
         double time = 0d;
         foreach (var timing in timings)
         {
@@ -1209,7 +1242,7 @@ public partial class MainWindow : Window
                 Keyboard.IsKeyDown(Key.Down)
             )) || needChangeTime)
         {
-            if (Bass.BASS_ChannelIsActive(bgmStream) == BASSActive.BASS_ACTIVE_PLAYING) Pause();
+            if (Bass.BASS_ChannelIsActive(bgmStream) == BASSActive.BASS_ACTIVE_PLAYING) Stop();
             SetBgmPosition(time);
             needChangeTime = false;
         }
@@ -1217,6 +1250,7 @@ public partial class MainWindow : Window
         //Console.WriteLine("SelectionChanged: " + GetRawFumenPosition());
         CursorTime = (float)time;
         if (!isPlaying) draw_wave();
+
         if (!isFinding)
         {
             findPosition = FumenContent.CaretIndex; //主动点击时刷新一下
@@ -1275,12 +1309,110 @@ public partial class MainWindow : Window
 
     private void FumenContent_OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        // 按下Insert键，同时未按下任何组合键，切换覆盖模式
-        if (e.Key == Key.Insert && Keyboard.Modifiers == ModifierKeys.None)
+        if (TryHandleInputBinding(e))
+            return;
+
+        if (Keyboard.Modifiers == ModifierKeys.Control)
         {
-            SwitchFumenOverwriteMode();
-            e.Handled = true;
+            if (e.Key == Key.Up)
+            {
+                EditingCommands.MoveUpByLine.Execute(null, (IInputElement)sender);
+                e.Handled = true;
+                return;
+            }
+            else if (e.Key == Key.Down)
+            {
+                EditingCommands.MoveDownByLine.Execute(null, (IInputElement)sender);
+                e.Handled = true;
+                return;
+            }
+            else if (e.Key == Key.Left)
+            {
+                EditingCommands.MoveLeftByCharacter.Execute(null, (IInputElement)sender);
+                e.Handled = true;
+                return;
+            }
+            else if (e.Key == Key.Right)
+            {
+                EditingCommands.MoveRightByCharacter.Execute(null, (IInputElement)sender);
+                e.Handled = true;
+                return;
+            }
         }
+        else if (Keyboard.Modifiers == ModifierKeys.None)
+        {
+            if (e.Key == Key.Insert)
+            {
+                SwitchFumenOverwriteMode();
+                e.Handled = true;
+                return;
+            }
+            else
+            {
+                if (editorSetting!.FullKeyboardMode)
+                {
+                    switch (e.Key)
+                    {
+                        case Key.L:
+                            TogglePlayAndPause();
+                            break;
+                        case Key.K:
+                            Stop();
+                            break;
+                        case Key.M:
+                            SeekTextFromNoteOffset(1);
+                            break;
+                        case Key.N:
+                            SeekTextFromNoteOffset(-1);
+                            break;
+                        case Key.T:
+                            SetBgmPosition(Bass.BASS_ChannelBytes2Seconds(bgmStream, Bass.BASS_ChannelGetPosition(bgmStream) - Bass.BASS_ChannelSeconds2Bytes(bgmStream, 3)));
+                            break;
+                        case Key.Y:
+                            SetBgmPosition(Bass.BASS_ChannelBytes2Seconds(bgmStream, Bass.BASS_ChannelGetPosition(bgmStream) + Bass.BASS_ChannelSeconds2Bytes(bgmStream, 3)));
+                            break;
+                        case Key.O:
+                            if (FollowPlayCheck.IsChecked == true) FollowPlayCheck.IsChecked = false;
+                            else FollowPlayCheck.IsChecked = true;
+                            break;
+                        default:
+                            base.OnPreviewKeyDown(e);
+                            return; //不处理其他按键
+                    }
+                    e.Handled = true;
+                    return;
+                }
+            }
+        }
+        base.OnPreviewKeyDown(e);
+    }
+
+    private bool TryHandleInputBinding(KeyEventArgs e)
+    {
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        if (key is Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt)
+            return false;
+        if (Keyboard.Modifiers is ModifierKeys.None or ModifierKeys.Shift) 
+            return false;
+
+        var gesture = new KeyGesture(key, Keyboard.Modifiers);
+
+        foreach (InputBinding binding in FumenContent.InputBindings)
+        {
+            if (binding.Gesture is KeyGesture kg &&
+                kg.Key == gesture.Key &&
+                kg.Modifiers == gesture.Modifiers)
+            {
+                if (binding.Command?.CanExecute(binding.CommandParameter) == true)
+                {
+                    binding.Command.Execute(binding.CommandParameter);
+                    e.Handled = true;
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private void FumenContent_ScrollChanged(object sender, ScrollChangedEventArgs e)
@@ -1366,6 +1498,7 @@ public partial class MainWindow : Window
         };
     }
 
+<<<<<<< HEAD
     private void MenuBar_SubmenuOpened(object sender, RoutedEventArgs e)
     {
         Console.WriteLine($"[WINE-DEBUG] SubmenuOpened: {e.Source}");
@@ -1391,5 +1524,165 @@ public partial class MainWindow : Window
     {
         base.OnPreviewGotKeyboardFocus(e);
         Console.WriteLine($"[WINE-DEBUG] Focus shift to: {e.NewValue}");
+=======
+    private void SwitchFullKeyboardMode_Click(object sender, RoutedEventArgs e)
+    {
+        if (editorSetting!.FullKeyboardMode) SetFullKeyboardMode(false);
+        else SetFullKeyboardMode(true);
+    }
+
+    private async void ConvertToFcpxml_Click(object sender, RoutedEventArgs e)
+    {
+        FcpxmlFpsPopup.IsOpen = true;
+    }
+
+    private async void ConfirmFps_Click(object sender, RoutedEventArgs e)
+    {
+        string input = FcpxmlFpsBox.Text.Trim();
+        if (!int.TryParse(input, out int fps))
+        {
+            MessageBox.Show($"Convert failed. Invalid FPS!");
+            return;
+        }
+
+        FcpxmlFpsPopup.IsOpen = false;
+
+        try
+        {
+            await SimaiProcess.Serialize(GetRawFumenText());
+
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Final Cut Pro XML|*.fcpxml",
+                FileName = $"{SimaiProcess.simaiFile.Title}_{SimaiProcess.GetDifficultyText(selectedDifficulty)}.fcpxml"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                await Task.Run(() =>
+                {
+                    Simai2FCPXML.Convert(
+                        SimaiProcess.OriginNoteLists[selectedDifficulty],
+                        dialog.FileName,
+                        SimaiProcess.simaiFile.Offset,
+                        fps);
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Convert failed. Error: {ex.Message}");
+        }
+    }
+    private void FcpxmlFpsPopup_Opened(object sender, EventArgs e)
+    {
+        FcpxmlFpsBox.Focus();
+        FcpxmlFpsBox.SelectAll();
+    }
+
+    private void FcpxmlFpsBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            ConfirmFps_Click(this, new RoutedEventArgs());
+        }
+        else if (e.Key == Key.Escape)
+        {
+            FcpxmlFpsPopup.IsOpen = false;
+        }
+    }
+
+    private async void MediaQuickProcess_Click(object sender, RoutedEventArgs e)
+    {
+        MediaQuickProcessPopup.IsOpen = true;
+    }
+
+    private void MediaQuickProcessPopup_Opened(object sender, EventArgs e)
+    {
+        BeatsCountBox.Focus();
+        BeatsCountBox.SelectAll();
+    }
+
+    private void BeatsCountBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            FreezeFrameCheckBox.Focus();
+        }
+        else if (e.Key == Key.Escape)
+        {
+            FcpxmlFpsPopup.IsOpen = false;
+        }
+    }
+
+    private async void ConfilmMediaQuickProcess_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (SimaiProcess.OriginTimingLists[selectedDifficulty].Count == 0)
+            {
+                MessageBox.Show("please enter '(BPM){1},' in the chart first! \n 请先输入 ‘(BPM){1},’ 到谱面中！让编辑器知道你音乐的bpm！", GetLocalizedString("Error"));
+                return;
+            }
+            var bpm = SimaiProcess.OriginTimingLists[selectedDifficulty][0].Bpm;
+            var offset = SimaiProcess.simaiFile.Offset;
+            if (!int.TryParse(BeatsCountBox.Text, out var beatsCount))
+            {
+                MessageBox.Show("Invalid Beats Count!", GetLocalizedString("Error"));
+                return;
+            }
+
+            TrackProcessor.AdjustMediaTime(converterPath, audioDir, 60 / bpm * beatsCount, offset);
+
+            string videoPath = "";
+            foreach (var name in new[] { "pv.mp4", "mv.mp4", "bg.mp4" })
+            {
+                var dir = Path.Combine(maidataDir, name);
+                if (File.Exists(dir))
+                {
+                    videoPath = dir;
+                    break;
+                }
+            }
+            if (videoPath == "")
+            {
+                var res = MessageBox.Show(GetLocalizedString("NoMp4Found"), GetLocalizedString("Warn"), MessageBoxButton.YesNo);
+                if (res == MessageBoxResult.No) return;
+            }
+
+            TrackProcessor.AdjustMediaTime(converterPath, videoPath, 60 / bpm * beatsCount, offset, 
+                FreezeFrameCheckBox.IsChecked == true);
+
+            OffsetTextBox.Text = "0";
+            SaveFumen(true);
+            await Task.Delay(30); //wait for others finish
+            await InitFromFile(maidataDir);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Adjust failed. reason: {ex.Message}", GetLocalizedString("Error"));
+        }
+    }
+
+    private async void ExtractMp3_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog()
+        {
+            Filter = "Video Files|*.mp4;*.mkv;*.avi;*.mov;*.flv;*.wmv|All Files|*.*",
+            FileName = maidataDir
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            var file = dialog.FileName;
+            var parent = Path.GetDirectoryName(file)!;
+            var newFile = Path.Combine(parent, "pv.mp4");
+            File.Move(file, newFile);
+            TrackProcessor.ExtractAudio(converterPath, newFile, Path.Combine(parent, "track.mp3"));
+
+            CreateNewFumen(parent);
+            await InitFromFile(parent);
+        }
+>>>>>>> majx/master
     }
 }

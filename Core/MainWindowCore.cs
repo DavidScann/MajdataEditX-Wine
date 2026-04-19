@@ -1,5 +1,6 @@
 ﻿using DiffMatchPatch;
 using DiscordRPC;
+using GalaSoft.MvvmLight.CommandWpf;
 using MajdataEdit.ChartShare;
 using Microsoft.AspNetCore.SignalR.Client;
 using Semver;
@@ -38,6 +39,10 @@ public partial class MainWindow : Window
 
     public EditorSetting? editorSetting;
     private bool UpdateCheckLock;
+
+    public string converterPath = Environment.CurrentDirectory + "/MajdataView_Data/StreamingAssets/ffmpeg.exe";
+
+    Dictionary<string, RelayCommand> editorCommands;
 
     // Fumen
     public static int selectedDifficulty = 0;
