@@ -136,7 +136,8 @@ public partial class MainWindow
 
                 if (se.hasClock) Bass.BASS_ChannelPlay(clockStream, true);
                 //
-                Dispatcher.Invoke(() =>
+                // Use InvokeAsync to avoid blocking the SE thread
+                Dispatcher.InvokeAsync(() =>
                 {
                     if ((bool)FollowPlayCheck.IsChecked!)
                     {
@@ -146,8 +147,10 @@ public partial class MainWindow
                 });
             }
         }
-        catch
+        catch (Exception ex)
         {
+            // Log exception instead of silently swallowing
+            Console.WriteLine($"SoundEffectUpdate error: {ex.Message}");
         }
     }
 

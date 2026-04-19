@@ -1,4 +1,4 @@
-﻿using DiffMatchPatch;
+using DiffMatchPatch;
 using DiscordRPC;
 using GalaSoft.MvvmLight.CommandWpf;
 using MajdataEdit.ChartShare;
@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.SignalR.Client;
 using Semver;
 using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -90,7 +91,20 @@ public partial class MainWindow : Window
     private Pen? _cachedGhostCursorPen;
     private Pen? _cachedFFTPen;
     private Font? _cachedStarFont;
+    private SolidBrush? _cachedStarBrush;
+    private LinearGradientBrush? _cachedHanabiBrush;
     private readonly List<PointF> _reusablePointList = new(2048);
+    private PointF[] _reusablePointArray = new PointF[4096];
+    private PointF[] _trianglePoints = new PointF[3];
+    private float[] _fftBuffer = new float[1024];
+    private PointF[] _fftPoints = new PointF[1024];
+    private Bitmap? _cachedWaveBitmap;
+    private Graphics? _cachedWaveGraphics;
+    private WriteableBitmap? _cachedFFTWritableBitmap;
+    private Bitmap? _cachedFFTBitmap;
+    private Graphics? _cachedFFTGraphics;
+    private int _lastWaveBitmapWidth = -1;
+    private int _lastWaveBitmapHeight = -1;
 
     // Cached beat positions (only recalculated when chart changes, NOT every frame)
     private List<double> _cachedStrongBeats = new(256);

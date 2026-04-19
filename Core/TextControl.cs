@@ -1,4 +1,4 @@
-﻿using MajdataEdit.Utils;
+using MajdataEdit.Utils;
 using System.Windows;
 using Un4seen.Bass;
 
@@ -11,8 +11,12 @@ namespace MajdataEdit;
 
 public partial class MainWindow : Window
 {
+    // Cache last serialized text to avoid redundant re-parsing on selection-only changes
+    private string? _lastSerializedText;
+
     // 基础getter setter
-    public string GetRawFumenText() => FumenContent.Text.Replace("\r", "");
+    // Note: FumenContent.Text never contains \r (we strip on Set), so Replace is redundant in hot paths
+    public string GetRawFumenText() => FumenContent.Text;
     public void SetRawFumenText(string content) => 
         FumenContent.Text = content == null ? "" : content.Replace("\r", "");
 
