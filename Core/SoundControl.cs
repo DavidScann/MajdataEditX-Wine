@@ -1,4 +1,4 @@
-using MajSimai;
+﻿using MajSimai;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -86,7 +86,7 @@ public partial class MainWindow
                 //sw.Reset();
                 //sw.Start();
                 SoundEffectUpdate();
-                Thread.Sleep(2); // 2ms is sufficient for the 54.5ms trigger window
+                Thread.Sleep(1);
                 //sw.Stop();
                 //if(sw.Elapsed.TotalMilliseconds>1.5)
                 //    Console.WriteLine(sw.Elapsed);
@@ -136,23 +136,14 @@ public partial class MainWindow
 
                 if (se.hasClock) Bass.BASS_ChannelPlay(clockStream, true);
                 //
-                // Throttle UI dispatches: store the latest time and dispatch at most every ~50ms
-                _pendingSeekTime = (float)nearestTime;
-                var now = Environment.TickCount64;
-                if (!_seekDispatchPending && now - _lastSeekDispatchTick > 50)
+                Dispatcher.Invoke(() =>
                 {
-                    _seekDispatchPending = true;
-                    _lastSeekDispatchTick = now;
-                    Dispatcher.InvokeAsync(() =>
+                    if ((bool)FollowPlayCheck.IsChecked!)
                     {
-                        _seekDispatchPending = false;
-                        if (FollowPlayCheck.IsChecked == true)
-                        {
-                            CursorTime = _pendingSeekTime;
-                            SeekTextFromCurTime();
-                        }
-                    });
-                }
+                        CursorTime = (float)nearestTime;
+                        SeekTextFromTime();
+                    }
+                });
             }
         }
         catch
@@ -382,12 +373,13 @@ public partial class MainWindow
         else
             // 如果足够播完 那么就等到BGM结束再停止
             extraTime4AllPerfect = -1;
+
+        //Console.WriteLine(JsonConvert.SerializeObject(waitToBePlayed));
     }
 
-    private void RenderSoundEffect(double delaySeconds)
+    private void renderSoundEffect(double delaySeconds)
     {
-        var speed = GetPlaybackSpeed();
-
+        //TODO: 改为异步并增加提示窗口
         var sfxPath = Environment.CurrentDirectory + "/SFX";
         var tempPath = Environment.CurrentDirectory + "/MajdataView_Data/StreamingAssets";
         var converterPath = tempPath + "/ffmpeg.exe";
@@ -549,7 +541,7 @@ public partial class MainWindow
         {
             var startIndex = (int)(soundTiming.time * freq) * 2; //乘2因为有两个channel
 
-            startIndex = (int)(startIndex / speed);
+            startIndex = (int)(startIndex / GetPlaybackSpeed());
 
             if (soundTiming.hasAnswer) sampleMix(seMixTrack, startIndex, SoundDataType.Answer, answerVol);
             if (soundTiming.hasJudge) sampleMix(seMixTrack, startIndex, SoundDataType.Judge, judgeVol);
@@ -590,15 +582,7 @@ public partial class MainWindow
         var outPath = maidataDir + "/out.wav";
         using var outStream = File.Create(outPath);
         using var writer = new BinaryWriter(outStream);
-
-        int dataSize = (int)(sampleCount * sizeof(short) / speed);
-
-        writer.Write(CreateWaveFileHeader(
-            dataSize,
-            2,
-            freq,
-            16
-        ));
+        writer.Write(CreateWaveFileHeader(bgmBank.Raw!.Length * 2 + delayEmpty.Length * 2, 2, freq, 16));
 
         for (var i = 0; i < delayEmpty.Length; i++)
         {
@@ -609,15 +593,7 @@ public partial class MainWindow
 
         for (var i = 0; i < sampleCount; i++)
         {
-            int idx = (int)(i * speed);
-            double frac = i * speed - idx;
-
-            short s1 = (idx < bgmBank.Raw!.Length) ? bgmBank.Raw[idx] : (short)0;
-            short s2 = (idx + 1 < bgmBank.Raw.Length) ? bgmBank.Raw[idx + 1] : s1;
-
-            double bgm = s1 + (s2 - s1) * frac;
-
-            var sampleValue = bgm * bgmVol + seMixTrack[i] + touchHoldTrack[i];
+            var sampleValue = bgmBank.Raw[i] * bgmVol + seMixTrack[i] + touchHoldTrack[i];
             var value = Math.Clamp((long)sampleValue, short.MinValue, short.MaxValue);
             writer.Write((short)value);
         }

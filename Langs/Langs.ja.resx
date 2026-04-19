@@ -692,4 +692,7 @@ Open Browser to download latest update of Majdata?</value>
   <data name="FreezeFrame" xml:space="preserve">
     <value>Freeze Frame</value>
   </data>
+  <data name="OpusPluginMissing" xml:space="preserve">
+    <value>Opus再生にはBASS Opusプラグイン（bass_opus.dll または bassopus.dll）が必要です。https://www.un4seen.com/files/bassopus24.zip からダウンロードして実行ファイルの横に置いてください。</value>
+  </data>
 </root>

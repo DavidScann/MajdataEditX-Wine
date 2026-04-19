@@ -657,4 +657,7 @@ CP区间±{5:0.0} ms，相关判定区如下:
   <data name="FreezeFrame" xml:space="preserve">
     <value>静帧填充</value>
   </data>
+  <data name="OpusPluginMissing" xml:space="preserve">
+    <value>Opus 音频需要 BASS Opus 插件（bass_opus.dll 或 bassopus.dll），请到 https://www.un4seen.com/files/bassopus24.zip 下载并放到可执行文件同目录。</value>
+  </data>
 </root>

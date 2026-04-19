@@ -267,28 +267,7 @@
   <data name="JudgeDisplayBoth" xml:space="preserve">
     <value />
   </data>
-  <data name="SwitchFullKeyboardMode" xml:space="preserve">
-    <value />
-  </data>
-  <data name="ConvertToFcpxml" xml:space="preserve">
-    <value />
-  </data>
-  <data name="MediaQuickProcess" xml:space="preserve">
-    <value />
-  </data>
-  <data name="NoMp4Found" xml:space="preserve">
-    <value />
-  </data>
-  <data name="ExtractMp3" xml:space="preserve">
-    <value />
-  </data>
-  <data name="InputFPS" xml:space="preserve">
-    <value />
-  </data>
-  <data name="BeatsCount" xml:space="preserve">
-    <value />
-  </data>
-  <data name="FreezeFrame" xml:space="preserve">
-    <value />
+  <data name="OpusPluginMissing" xml:space="preserve">
+    <value>Opus playback requires the BASS Opus plugin (bass_opus.dll or bassopus.dll). Download it from https://www.un4seen.com/files/bassopus24.zip and place it beside the executable before loading Opus tracks.</value>
   </data>
 </root>

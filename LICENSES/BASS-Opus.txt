@@ -1,0 +1,9 @@
+BASS Opus plugin (bass_opus.dll)
+
+Source: https://www.un4seen.com/files/bassopus24.zip
+
+This binary was downloaded from the official Un4seen site and is included here for convenience.
+Per Un4seen's licensing, BASS and its plugins are free for non-commercial use; review
+https://www.un4seen.com/ for full licensing and distribution terms.
+
+If you need a commercial license, obtain it from Un4seen directly.
