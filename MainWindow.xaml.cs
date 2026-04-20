@@ -557,6 +557,22 @@ public partial class MainWindow : Window
             RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
         }
         instance = this;
+
+        editorCommands = new()
+        {
+            { "PlayAndPause", new(() => TogglePlayAndStop()) },
+            { "SaveFile", new(() => { SaveFumen(true); SystemSounds.Beep.Play(); }) },
+            { "StopPlaying", new(() => TogglePlayAndPause()) },
+            { "SendToView", new(() => TogglePlayAndStop(PlayMethod.Op)) },
+            { "IncreasePlaybackSpeed", new(() => SetPlaybackSpeedDiff(1)) },
+            { "DecreasePlaybackSpeed", new(() => SetPlaybackSpeedDiff(-1)) },
+            { "Find", new(toggle_find) },
+            { "MirrorLR", new(() => ApplyMirror(Mirror.HandleType.LRMirror)) },
+            { "MirrorUD", new(() => ApplyMirror(Mirror.HandleType.UDMirror)) },
+            { "Mirror180", new(() => ApplyMirror(Mirror.HandleType.HalfRotation)) },
+            { "Mirror45", new(() => ApplyMirror(Mirror.HandleType.Rotation45)) },
+            { "MirrorCcw45", new(() => ApplyMirror(Mirror.HandleType.CcwRotation45)) },
+        };
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
