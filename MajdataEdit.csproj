@@ -76,6 +76,8 @@
     <ItemGroup>
       <Compile Remove="MajSimai.Extensions\**\*.cs" />
       <Compile Remove="MajSimaiX\**\*.cs" />
+      <Compile Remove="Automation\**\*.cs" />
+      <Compile Remove="tests\**\*.cs" />
     </ItemGroup>
     <ItemGroup>
       <Resource Include="Resources\bg_dummy.jpg" />
