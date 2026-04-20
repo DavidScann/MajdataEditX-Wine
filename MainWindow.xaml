@@ -165,7 +165,7 @@
                 AcceptsReturn="True" AcceptsTab="True" TextWrapping="Wrap"
                 BorderThickness="1" Foreground="#FFE8E8E8" 
                 Padding="0,5" Margin="102,29,10,90" 
-                FontFamily="Noto Sans Mono" FontSize="14" 
+                FontFamily="Consolas, Noto Sans Mono" FontSize="14" 
                 FocusVisualStyle="{x:Null}" 
                 VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Auto"
                 InputMethod.IsInputMethodEnabled="False"
@@ -192,7 +192,7 @@
         <Label x:Name="FatalErrorLabel" Height="23" Margin="102,29,10,90" VerticalAlignment="Bottom"
                Grid.ColumnSpan="2" Grid.Row="1" Grid.Column="1" MouseDown="FatalErrorLabel_MouseDown" Foreground="#FFFD2E2E" />
         <Label x:Name="TimeLabel" Content="0:00" HorizontalAlignment="Left" Height="64" Margin="0,16,0,0"
-               VerticalAlignment="Top" Width="105" Foreground="{DynamicResource ButtonForeground}" FontFamily="Noto Sans" FontSize="50"
+               VerticalAlignment="Top" Width="105" Foreground="{DynamicResource ButtonForeground}" FontFamily="Bahnschrift Light, Noto Sans" FontSize="50"
                VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Grid.Row="1" Grid.ColumnSpan="2" />
         <ComboBox x:Name="LevelSelector" Margin="7,116,0,0" SelectionChanged="ComboBox_SelectionChanged"
                   HorizontalAlignment="Left" Width="87" Height="21" VerticalAlignment="Top"
