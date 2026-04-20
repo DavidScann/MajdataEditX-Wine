@@ -248,7 +248,7 @@
                 VerticalAlignment="Bottom" Width="38" Click="StopButton_Click"
                 Background="{DynamicResource ButtonsBackground}" Foreground="{DynamicResource ButtonForeground}"
                 Template="{DynamicResource DarkButton}" Grid.Row="1" Grid.Column="1" />
-        <Label x:Name="NoteNowText" Content="行" FontFamily="Noto Sans CJK JP" HorizontalAlignment="Left" Margin="0,73,0,0" VerticalAlignment="Top"
+        <Label x:Name="NoteNowText" Content="行" FontFamily="Microsoft YaHei UI, Microsoft YaHei, Noto Sans CJK JP" HorizontalAlignment="Left" Margin="0,73,0,0" VerticalAlignment="Top"
                Foreground="{DynamicResource LabelForeground}" Width="105" HorizontalContentAlignment="Center" Height="25" Grid.Row="1" Grid.ColumnSpan="2" />
         <Button x:Name="Op_Button" Content="{lex:Loc RecMode}" Height="30" Margin="6,0,0,165"
                 VerticalAlignment="Bottom" RenderTransformOrigin="1.1,0.25" Click="Op_Button_Click"
