@@ -1,3 +1,10 @@
+# ARCHIVED PROJECT
+This project is now archived because MajdataX recently made the move to Avalonia, on top of a new platform called MajdataNeo. This is a cross-platform UI library, allowing easier porting.
+
+Although upstream is currently only built for Windows, I'll try to maintain a separate fork designed to recompile the project for Linux with additional changes (Opus audio, etc.)
+
+---
+
 # MajdataEdit fork for Wine
 * now rebased for MajdataEditX by re-poem
 
