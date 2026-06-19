@@ -290,6 +290,15 @@ CP区间±{5:0.0} ms，相关判定区如下:
   <data name="ExtractMp3" xml:space="preserve">
     <value>从视频新建谱面</value>
   </data>
+  <data name="InputFPS" xml:space="preserve">
+    <value>输入目标帧率</value>
+  </data>
+  <data name="BeatsCount" xml:space="preserve">
+    <value>开头拍数</value>
+  </data>
+  <data name="FreezeFrame" xml:space="preserve">
+    <value>静帧填充</value>
+  </data>
   <data name="AskCloseView" xml:space="preserve">
     <value>要关闭View吗？</value>
   </data>
@@ -303,7 +312,7 @@ CP区间±{5:0.0} ms，相关判定区如下:
     <value>BPM Tap</value>
   </data>
   <data name="Brightness" xml:space="preserve">
-    <value>背景亮度</value>
+    <value>背景暗度</value>
   </data>
   <data name="Difficulty" xml:space="preserve">
     <value>难度</value>
@@ -647,15 +656,6 @@ CP区间±{5:0.0} ms，相关判定区如下:
   </data>
   <data name="UserLeft" xml:space="preserve">
     <value>{0} 离开了谱面共享 {1}</value>
-  </data>
-  <data name="InputFPS" xml:space="preserve">
-    <value>输入目标帧率</value>
-  </data>
-  <data name="BeatsCount" xml:space="preserve">
-    <value>开头拍数</value>
-  </data>
-  <data name="FreezeFrame" xml:space="preserve">
-    <value>静帧填充</value>
   </data>
   <data name="OpusPluginMissing" xml:space="preserve">
     <value>Opus 音频需要 BASS Opus 插件（bass_opus.dll 或 bassopus.dll），请到 https://www.un4seen.com/files/bassopus24.zip 下载并放到可执行文件同目录。</value>

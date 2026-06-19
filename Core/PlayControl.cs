@@ -34,6 +34,8 @@ public partial class MainWindow : Window
         if (lastEditorState == EditorControlMethod.Start)
             return;
 
+        if (lastEditorState != EditorControlMethod.Stop) Stop();
+
         FumenContent.Focus();
         SaveFumen(false);
         if (CheckAndStartView()) return;
@@ -53,13 +55,12 @@ public partial class MainWindow : Window
         {
             case PlayMethod.Record:
                 MessageBox.Show(GetLocalizedString("AskRender"), GetLocalizedString("Attention"));
-                if (lastEditorState != EditorControlMethod.Stop) Stop();
                 Bass.BASS_ChannelSetAttribute(bgmStream, BASSAttribute.BASS_ATTRIB_FREQ, originFreq * GetPlaybackSpeed());
                 Bass.BASS_ChannelSetPosition(bgmStream, 0);
                 startAt = DateTime.Now.AddSeconds(5d);
                 InternalSwitchWindow(false);
                 generateSoundEffectList(0.0, isOpIncluded);
-                var task = new Task(() => renderSoundEffect(5d / GetPlaybackSpeed()));
+                var task = new Task(() => RenderSoundEffect(5d / GetPlaybackSpeed()));
                 try
                 {
                     task.Start();
@@ -127,7 +128,7 @@ public partial class MainWindow : Window
             return n.RawTextPosition <= GetRawFumenPosition() &&
                    n.RawTextPosition + n.RawContent.Length >= GetRawFumenPosition();
         })?.Timing ?? 0d);
-        draw_wave();
+        //draw_wave();
     }
 
     private void Pause()

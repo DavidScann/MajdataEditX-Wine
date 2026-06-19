@@ -675,7 +675,7 @@ public partial class MainWindow : Window
         //太快=>异步=>在另外线程调用的原因。。被自己蠢笑啦
         Dispatcher.Invoke(async () =>
         {
-            SyntaxCheck();
+            await SyntaxCheck();
             await SimaiProcess.Serialize(GetRawFumenText());
             InvalidateBeatCache();
             draw_wave();
@@ -1056,7 +1056,7 @@ public partial class MainWindow : Window
         SimaiProcess.levels[selectedDifficulty] = LevelTextBox.Text;
     }
 
-    private async void OffsetTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    private async void OffsetTextBox_LostFocus(object sender, RoutedEventArgs e)
     {
         if (IsLoading) return;
         SetSavedState(false);
@@ -1072,6 +1072,14 @@ public partial class MainWindow : Window
         catch
         {
             SimaiProcess.simaiFile.Offset = 0f;
+        }
+    }
+    private void OffsetTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            FumenContent.Focus();
+            e.Handled = true;
         }
     }
 
@@ -1158,19 +1166,10 @@ public partial class MainWindow : Window
 
     private async void FumenContent_TextChanged(object sender, TextChangedEventArgs e)
     {
+        BuildPrefixRCountIndex();
         if (IsLoading) return;
         SetSavedState(false);
         await SyncChartServer(); //立马同步，用了diff的原因，没那么卡
-
-        //间隔太小了不用管 话说为什么是33。
-        //if (chartChangeTimer.Interval < 33)
-        //{
-        //    SimaiProcess.Serialize(GetRawFumenText(), GetRawFumenPosition());
-        //    DrawWave();
-        //    return;
-        //}
-
-        //私以为没必要 真的有人注意过铺面刷新延迟吗。
         chartChangeTimer.Stop();
         chartChangeTimer.Start();
     }
@@ -1242,9 +1241,9 @@ public partial class MainWindow : Window
             var newDelta = deltatime + -e.Delta / 100;
             if (newDelta > 1 && newDelta < 10)
                 deltatime = newDelta;
-            draw_wave();
             return;
         }
+
         ScrollWave(-e.Delta);
     }
 

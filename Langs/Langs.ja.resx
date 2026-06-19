@@ -290,6 +290,15 @@ Critical Perfect: ±{5:0.0} ms，Sensors:
   <data name="ExtractMp3" xml:space="preserve">
     <value>New Chart From Video</value>
   </data>
+  <data name="InputFPS" xml:space="preserve">
+    <value>Input FPS</value>
+  </data>
+  <data name="BeatsCount" xml:space="preserve">
+    <value>Beats Count</value>
+  </data>
+  <data name="FreezeFrame" xml:space="preserve">
+    <value>Freeze Frame</value>
+  </data>
   <data name="AskCloseView" xml:space="preserve">
     <value>Viewを閉しますか？</value>
   </data>
@@ -303,7 +312,7 @@ Critical Perfect: ±{5:0.0} ms，Sensors:
     <value>BPM Tap</value>
   </data>
   <data name="Brightness" xml:space="preserve">
-    <value>明るさ</value>
+    <value>背景の暗さ</value>
   </data>
   <data name="Difficulty" xml:space="preserve">
     <value>レベル</value>
@@ -682,15 +691,6 @@ Open Browser to download latest update of Majdata?</value>
   </data>
   <data name="UserLeft" xml:space="preserve">
     <value>{0} Left Chart Share {1}</value>
-  </data>
-  <data name="InputFPS" xml:space="preserve">
-    <value>Input FPS</value>
-  </data>
-  <data name="BeatsCount" xml:space="preserve">
-    <value>Beats Count</value>
-  </data>
-  <data name="FreezeFrame" xml:space="preserve">
-    <value>Freeze Frame</value>
   </data>
   <data name="OpusPluginMissing" xml:space="preserve">
     <value>Opus再生にはBASS Opusプラグイン（bass_opus.dll または bassopus.dll）が必要です。https://www.un4seen.com/files/bassopus24.zip からダウンロードして実行ファイルの横に置いてください。</value>

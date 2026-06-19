@@ -226,8 +226,8 @@
         <TextBox x:Name="OffsetTextBox" HorizontalAlignment="Left" Height="25" Margin="47,172,0,0" TextWrapping="Wrap"
                  VerticalAlignment="Top" Width="46" VerticalContentAlignment="Center"
                  Background="{DynamicResource ButtonsBackground}" Foreground="{DynamicResource ButtonForeground}"
-                 HorizontalContentAlignment="Center" TextChanged="OffsetTextBox_TextChanged"
-                 MouseWheel="OffsetTextBox_MouseWheel" Grid.Row="1" Grid.Column="1" />
+                 HorizontalContentAlignment="Center"
+                 MouseWheel="OffsetTextBox_MouseWheel" Grid.Row="1" Grid.Column="1" LostFocus="OffsetTextBox_LostFocus" PreviewKeyDown="OffsetTextBox_PreviewKeyDown" />
         <ComboBox x:Name="PlayBackSpeedSelector" Margin="7,241,0,0" 
                   HorizontalAlignment="Left" Width="87" Height="21" VerticalAlignment="Top" SelectedIndex="4"
                   Background="{DynamicResource ButtonsBackground}" Foreground="{DynamicResource ButtonForeground}"

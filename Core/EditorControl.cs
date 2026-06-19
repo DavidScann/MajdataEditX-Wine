@@ -198,9 +198,8 @@ public partial class MainWindow : Window
             Pause();
         delta = delta * deltatime / (Width / 2);
         var time = Bass.BASS_ChannelBytes2Seconds(bgmStream, Bass.BASS_ChannelGetPosition(bgmStream));
-        SetBgmPosition(time + delta);
+        SetBgmPosition(time + delta); //ran draw_wave() in SetBgmPosition, so no need to call
         SeekTextFromCurTime();
-        Task.Run(() => draw_wave());
     }
 
 

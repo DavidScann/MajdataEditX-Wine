@@ -290,6 +290,15 @@ Critical Perfect: ±{5:0.0} ms，Sensors:
   <data name="ExtractMp3" xml:space="preserve">
     <value>New Chart From Video</value>
   </data>
+  <data name="InputFPS" xml:space="preserve">
+    <value>Input FPS</value>
+  </data>
+  <data name="BeatsCount" xml:space="preserve">
+    <value>Beats Count</value>
+  </data>
+  <data name="FreezeFrame" xml:space="preserve">
+    <value>Freeze Frame</value>
+  </data>
   <data name="AskCloseView" xml:space="preserve">
     <value>Close Viewer?</value>
   </data>
@@ -303,7 +312,7 @@ Critical Perfect: ±{5:0.0} ms，Sensors:
     <value>BPM Tap</value>
   </data>
   <data name="Brightness" xml:space="preserve">
-    <value>Bright</value>
+    <value>Background Dim</value>
   </data>
   <data name="Difficulty" xml:space="preserve">
     <value>Level</value>
@@ -654,15 +663,6 @@ Click OK to start render.</value>
   </data>
   <data name="UserLeft" xml:space="preserve">
     <value>{0} Left Chart Share {1}</value>
-  </data>
-  <data name="InputFPS" xml:space="preserve">
-    <value>Input FPS</value>
-  </data>
-  <data name="BeatsCount" xml:space="preserve">
-    <value>Beats Count</value>
-  </data>
-  <data name="FreezeFrame" xml:space="preserve">
-    <value>Freeze Frame</value>
   </data>
   <data name="OpusPluginMissing" xml:space="preserve">
     <value>Opus playback requires the BASS Opus plugin (bass_opus.dll or bassopus.dll). Download it from https://www.un4seen.com/files/bassopus24.zip and place it beside the executable before loading Opus tracks.</value>

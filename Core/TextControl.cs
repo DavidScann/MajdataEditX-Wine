@@ -106,7 +106,20 @@ public partial class MainWindow : Window
 
     //////////////////// Helper Functions ////////////////////
 
+    int[] prefixRCount;
+    void BuildPrefixRCountIndex()
+    {
+        var text = FumenContent.Text;
+        if (prefixRCount == null || text.Length + 1 > prefixRCount.Length)
+        {
+            prefixRCount = new int[text.Length + 1];
+        }
 
+        for (int i = 0; i < text.Length; i++)
+        {
+            prefixRCount[i + 1] = prefixRCount[i] + (text[i] == '\r' ? 1 : 0);
+        }
+    }
     private int ToRawFumenPosition(int uiIndex)
     {
         string text = FumenContent.Text;
@@ -115,17 +128,7 @@ public partial class MainWindow : Window
         if (uiIndex > text.Length) uiIndex = text.Length;
         if (uiIndex < 0) return 0;
 
-        int rCount = 0;
-        // 遍历到当前光标位置，统计有多少个 \r
-        for (int i = 0; i < uiIndex; i++)
-        {
-            if (text[i] == '\r')
-            {
-                rCount++;
-            }
-        }
-
-        return uiIndex - rCount;
+        return uiIndex - prefixRCount[uiIndex];
     }
 
     private int ToUiIndex(int rawFumenPosition)
